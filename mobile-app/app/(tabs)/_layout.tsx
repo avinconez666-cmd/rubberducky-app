@@ -41,6 +41,34 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="hazards"
+        options={{
+          title: "Hazards",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="exclamationmark.triangle.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="navigation"
+        options={{
+          title: "Nav",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="location.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: "Friends",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.3.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="subscription"
+        options={{
+          title: "Premium",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="star.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="channels"
         options={{
           title: "Channels",

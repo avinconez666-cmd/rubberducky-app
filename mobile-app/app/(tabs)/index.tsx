@@ -50,6 +50,7 @@ function MapBackground() {
 
 // ─── Nearby driver marker ─────────────────────────────────────────────────────
 function DriverMarker({ driver, index }: { driver: NearbyDriver; index: number }) {
+
   const positions = [
     { top: "25%", left: "20%" },
     { top: "30%", right: "15%" },
@@ -68,6 +69,29 @@ function DriverMarker({ driver, index }: { driver: NearbyDriver; index: number }
       <View style={styles.driverLabel}>
         <Text style={styles.driverName} numberOfLines={1}>{driver.displayName}</Text>
       </View>
+    </View>
+  );
+}
+
+// ─── Hazard marker ────────────────────────────────────────────────────────────
+function HazardMarker({ hazard, index }: { hazard: any; index: number }) {
+  const HAZARD_EMOJI = {
+    accident: "🚗",
+    speed_camera: "📷",
+    police: "🚔",
+    debris: "🪨",
+  };
+  const positions = [
+    { top: "35%", right: "25%" },
+    { bottom: "40%", right: "30%" },
+    { top: "45%", left: "30%" },
+    { bottom: "25%", left: "35%" },
+  ];
+  const pos = positions[index % positions.length];
+
+  return (
+    <View style={[styles.hazardMarker, pos as any]}>
+      <Text style={styles.hazardEmoji}>{HAZARD_EMOJI[hazard.type as keyof typeof HAZARD_EMOJI]}</Text>
     </View>
   );
 }
@@ -144,6 +168,9 @@ export default function MapScreen() {
     isConnected,
     sendTextMessage,
     addVoiceMessage,
+    hazards,
+    reportHazard,
+    subscription,
   } = useApp();
 
   const insets = useSafeAreaInsets();
@@ -205,6 +232,9 @@ export default function MapScreen() {
       <MapBackground />
       {nearbyDrivers.map((d, i) => (
         <DriverMarker key={d.id} driver={d} index={i} />
+      ))}
+      {hazards.filter((h) => h.expiresAt > Date.now()).map((h, i) => (
+        <HazardMarker key={h.id} hazard={h} index={i} />
       ))}
 
       {/* Top status bar */}
@@ -370,5 +400,6 @@ const styles = StyleSheet.create({
   channelCheck: { fontSize: 18, color: "#F59E0B", fontWeight: "800" },
   channelCloseBtn: { marginTop: 16, backgroundColor: "#334155", borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   channelCloseTxt: { fontSize: 15, color: "#94A3B8", fontWeight: "700" },
+  hazardMarker: { position: "absolute", alignItems: "center", justifyContent: "center", zIndex: 8 },
+  hazardEmoji: { fontSize: 24 },
 });
-

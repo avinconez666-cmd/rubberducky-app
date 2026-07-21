@@ -7,6 +7,56 @@ export type VehicleType = "car" | "truck" | "motorcycle" | "rv";
 
 export type ChannelType = "public" | "emergency" | "custom";
 
+// ─── Hazard Report ────────────────────────────────────────────────────────────
+export type HazardType = "accident" | "speed_camera" | "police" | "debris";
+
+export interface HazardReport {
+  id: string;
+  type: HazardType;
+  latitude: number;
+  longitude: number;
+  description: string;
+  reportedBy: string;
+  reportedAt: number;
+  expiresAt: number;
+  upvotes: number;
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+export interface NavigationState {
+  destination: string | null;
+  destinationLat: number | null;
+  destinationLng: number | null;
+  isNavigating: boolean;
+  currentSpeed: number;
+  speedLimit: number;
+  nextTurn: string | null;
+  distanceToTurn: number;
+  etaMinutes: number;
+}
+
+// ─── Friend ───────────────────────────────────────────────────────────────────
+export interface Friend {
+  id: string;
+  displayName: string;
+  vehicleType: VehicleType;
+  isOnline: boolean;
+  lastSeen: number;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+// ─── Subscription ─────────────────────────────────────────────────────────────
+export type SubscriptionTier = "free" | "premium";
+
+export interface Subscription {
+  tier: SubscriptionTier;
+  expiresAt: number | null;
+  canReportHazards: boolean;
+  canNavigate: boolean;
+  canAddFriends: boolean;
+}
+
 export interface Channel {
   id: string;
   name: string;
@@ -76,6 +126,22 @@ interface AppContextValue {
   currentSpeed: number;
   // Connection
   isConnected: boolean;
+  // Hazards
+  hazards: HazardReport[];
+  reportHazard: (type: HazardType, description: string, lat: number, lng: number) => void;
+  upvoteHazard: (hazardId: string) => void;
+  // Navigation
+  navigation: NavigationState;
+  setDestination: (name: string, lat: number, lng: number) => void;
+  startNavigation: () => void;
+  stopNavigation: () => void;
+  // Friends
+  friends: Friend[];
+  addFriend: (displayName: string) => void;
+  removeFriend: (friendId: string) => void;
+  // Subscription
+  subscription: Subscription;
+  upgradeToPremium: () => void;
 }
 
 // ─── Default channels ─────────────────────────────────────────────────────────
@@ -135,6 +201,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [isConnected, setIsConnected] = useState(true);
   const speedSimRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [hazards, setHazards] = useState<HazardReport[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [subscription, setSubscription] = useState<Subscription>({
+    tier: "free",
+    expiresAt: null,
+    canReportHazards: false,
+    canNavigate: false,
+    canAddFriends: false,
+  });
+  const [navigation, setNavigationState] = useState<NavigationState>({
+    destination: null,
+    destinationLat: null,
+    destinationLng: null,
+    isNavigating: false,
+    currentSpeed: 0,
+    speedLimit: 50,
+    nextTurn: null,
+    distanceToTurn: 0,
+    etaMinutes: 0,
+  });
 
   // Load persisted state on mount
   useEffect(() => {
@@ -310,6 +396,86 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateUser({ messagesSent: (user.messagesSent ?? 0) + 1 });
   }, [user, activeChannel.id, updateUser]);
 
+  const reportHazard = useCallback((type: HazardType, description: string, lat: number, lng: number) => {
+    if (!subscription.canReportHazards) return;
+    const hazard: HazardReport = {
+      id: `hazard-${Date.now()}`,
+      type,
+      latitude: lat,
+      longitude: lng,
+      description,
+      reportedBy: user?.displayName ?? "Anonymous",
+      reportedAt: Date.now(),
+      expiresAt: Date.now() + 3600000, // 1 hour
+      upvotes: 1,
+    };
+    setHazards((prev) => [...prev, hazard]);
+  }, [user, subscription.canReportHazards]);
+
+  const upvoteHazard = useCallback((hazardId: string) => {
+    setHazards((prev) =>
+      prev.map((h) => (h.id === hazardId ? { ...h, upvotes: h.upvotes + 1 } : h))
+    );
+  }, []);
+
+  const setDestination = useCallback((name: string, lat: number, lng: number) => {
+    if (!subscription.canNavigate) return;
+    setNavigationState((prev) => ({
+      ...prev,
+      destination: name,
+      destinationLat: lat,
+      destinationLng: lng,
+    }));
+  }, [subscription.canNavigate]);
+
+  const startNavigation = useCallback(() => {
+    setNavigationState((prev) => ({ ...prev, isNavigating: true }));
+  }, []);
+
+  const stopNavigation = useCallback(() => {
+    setNavigationState((prev) => ({
+      ...prev,
+      isNavigating: false,
+      destination: null,
+      destinationLat: null,
+      destinationLng: null,
+    }));
+  }, []);
+
+  const addFriend = useCallback((displayName: string) => {
+    if (!subscription.canAddFriends) return;
+    const friend: Friend = {
+      id: `friend-${Date.now()}`,
+      displayName,
+      vehicleType: "car",
+      isOnline: Math.random() > 0.5,
+      lastSeen: Date.now(),
+      latitude: null,
+      longitude: null,
+    };
+    setFriends((prev) => [...prev, friend]);
+  }, [subscription.canAddFriends]);
+
+  const removeFriend = useCallback((friendId: string) => {
+    setFriends((prev) => prev.filter((f) => f.id !== friendId));
+  }, []);
+
+  const upgradeToPremium = useCallback(() => {
+    setSubscription({
+      tier: "premium",
+      expiresAt: Date.now() + 365 * 24 * 3600000, // 1 year
+      canReportHazards: true,
+      canNavigate: true,
+      canAddFriends: true,
+    });
+    if (user) {
+      AsyncStorage.setItem("rubberducky_subscription", JSON.stringify({
+        tier: "premium",
+        expiresAt: Date.now() + 365 * 24 * 3600000,
+      })).catch(() => {});
+    }
+  }, [user]);
+
   return (
     <AppContext.Provider
       value={{
@@ -332,6 +498,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isSafetyMode,
         currentSpeed,
         isConnected,
+        hazards,
+        reportHazard,
+        upvoteHazard,
+        navigation,
+        setDestination,
+        startNavigation,
+        stopNavigation,
+        friends,
+        addFriend,
+        removeFriend,
+        subscription,
+        upgradeToPremium,
       }}
     >
       {children}
