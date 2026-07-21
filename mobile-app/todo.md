@@ -68,3 +68,17 @@
 - [x] Verify no TypeScript errors
 - [ ] Save checkpoint
 - [ ] Push to GitHub
+
+
+## Phase 8: Real Maps Integration
+- [x] Install react-native-maps and expo-location
+- [x] Update AppContext with user location state
+- [x] Add location permission requests
+- [x] Replace simulated grid with MapView (native) / grid fallback (web)
+- [x] Add driver location markers to map
+- [x] Add hazard pins to map with Marker components
+- [x] Implement location tracking with watchPositionAsync
+- [x] Add map controls (zoom, center on user)
+- [x] Fix web compatibility (dynamic require for native-only modules)
+- [x] Save checkpoint
+- [x] Push to GitHub
