@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180" role="img" aria-labelledby="title desc">
+  <title id="title">Sci-Fi Orbital Bike</title>
+  <desc id="desc">Scalable Rubberducky garage vehicle asset</desc>
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8C6CFF"/><stop offset="1" stop-color="#17202c"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <ellipse cx="180" cy="153" rx="120" ry="7" fill="#8C6CFF" opacity=".2" filter="url(#glow)"/><circle cx="96" cy="129" r="25" fill="none" stroke="#32E6D3" stroke-width="8" filter="url(#glow)"/><circle cx="260" cy="129" r="25" fill="none" stroke="#32E6D3" stroke-width="8" filter="url(#glow)"/><path d="M96 129 151 77h66l43 52M151 77l34 52M185 129l32-52" fill="none" stroke="url(#paint)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M145 80c19-24 57-25 77-3l-5 26h-72z" fill="#8C6CFF"/><path d="M211 75h35" stroke="#D8E4E8" stroke-width="5" stroke-linecap="round"/>
+</svg>

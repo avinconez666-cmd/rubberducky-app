@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 180" role="img" aria-labelledby="title desc">
+  <title id="title">Side Energy Blade</title>
+  <desc id="desc">Scalable Rubberducky garage vehicle asset</desc>
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF4FD8"/><stop offset="1" stop-color="#17202c"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <path d="M28 107 214 44l-27 43 56 5-186 48z" fill="#202633" stroke="#FF4FD8" stroke-width="5"/><path d="M60 111 191 73" stroke="#32E6D3" stroke-width="7" filter="url(#glow)"/>
+</svg>

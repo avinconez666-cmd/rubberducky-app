@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 180" role="img" aria-labelledby="title desc">
+  <title id="title">Drone Dock</title>
+  <desc id="desc">Scalable Rubberducky garage vehicle asset</desc>
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8C6CFF"/><stop offset="1" stop-color="#17202c"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect x="40" y="62" width="180" height="74" rx="16" fill="#202633" stroke="#8C6CFF" stroke-width="5"/><circle cx="130" cy="98" r="25" fill="#32E6D3" opacity=".8"/><path d="M105 98h50M130 73v50" stroke="#F4F0E6" stroke-width="4"/>
+</svg>

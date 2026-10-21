@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180" role="img" aria-labelledby="title desc">
+  <title id="title">Sci-Fi Recon Rover</title>
+  <desc id="desc">Scalable Rubberducky garage vehicle asset</desc>
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B9F227"/><stop offset="1" stop-color="#17202c"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <ellipse cx="180" cy="160" rx="144" ry="8" fill="#000" opacity=".22"/><rect x="35" y="66" width="290" height="68" rx="20" fill="url(#paint)"/><path d="M83 66 112 32h102l37 34z" fill="#202633"/><path d="M130 53h67" stroke="#B9F227" stroke-width="7" stroke-linecap="round"/><circle cx="180" cy="32" r="13" fill="#B9F227"/><circle cx="83" cy="136" r="31" fill="#171A21" stroke="#B9F227" stroke-width="7"/><circle cx="277" cy="136" r="31" fill="#171A21" stroke="#B9F227" stroke-width="7"/><rect x="302" y="88" width="17" height="12" rx="4" fill="#FFF6D0"/>
+</svg>

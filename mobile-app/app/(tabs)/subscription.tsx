@@ -17,6 +17,7 @@ import {
   type CarBody,
   type WheelStyle,
 } from "@/constants/garage";
+import { PACKAGE_TIERS } from "@/constants/vehicle-customization";
 
 export default function GarageScreen() {
   const { user, updateUser } = useApp();
@@ -80,6 +81,22 @@ export default function GarageScreen() {
         <Text style={styles.kicker}>GARAGE</Text>
         <Text style={styles.title}>{user.displayName}</Text>
         <Text style={styles.lead}>Paint, wheels, and kit. Locked pieces open when you use the radio, not when you pay.</Text>
+
+        <Text style={styles.section}>Garage packages</Text>
+        {PACKAGE_TIERS.map((tier) => (
+          <View key={tier.id} style={styles.packageCard}>
+            <View style={styles.packageTopline}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.packageName}>{tier.name}</Text>
+                <Text style={styles.packageTagline}>{tier.tagline}</Text>
+              </View>
+              <Text style={styles.packagePrice}>
+                {tier.billing === "free" ? "Free" : tier.billing === "monthly" ? `$${(tier.priceCents / 100).toFixed(2)}/mo` : `$${(tier.priceCents / 100).toFixed(2)}`}
+              </Text>
+            </View>
+            <Text style={styles.packageUnlocks}>Unlocks {tier.unlocks.length} garage items</Text>
+          </View>
+        ))}
 
         <Animated.View style={[styles.hero, { transform: [{ scale: stage }] }]}>
           <CartoonVehicle car={car} width={340} />
@@ -195,6 +212,12 @@ const styles = StyleSheet.create({
   kicker: { color: "#E4B15A", letterSpacing: 2.4, fontSize: 12, fontWeight: "700", marginTop: 8 },
   title: { color: "#F4F0E6", fontSize: 34, fontWeight: "700", marginTop: 4 },
   lead: { color: "#9AA3B2", marginTop: 6, lineHeight: 20 },
+  packageCard: { marginTop: 8, backgroundColor: "#12151C", borderRadius: 16, padding: 14, borderWidth: 1, borderColor: "#2A3140" },
+  packageTopline: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  packageName: { color: "#F4F0E6", fontWeight: "700", fontSize: 16 },
+  packageTagline: { color: "#9AA3B2", fontSize: 12, lineHeight: 17, marginTop: 4 },
+  packagePrice: { color: "#E4B15A", fontWeight: "800", fontSize: 15 },
+  packageUnlocks: { color: "#32E6D3", fontSize: 12, fontWeight: "700", marginTop: 10 },
   hero: { marginTop: 16, backgroundColor: "#12151C", borderRadius: 28, borderWidth: 1, borderColor: "#2A3140", alignItems: "center", paddingTop: 12, paddingBottom: 8 },
   heroMeta: { color: "#9AA3B2", fontWeight: "600", marginBottom: 8 },
   profile: { marginTop: 14, flexDirection: "row", gap: 14, alignItems: "center", backgroundColor: "#12151C", borderRadius: 20, padding: 14, borderWidth: 1, borderColor: "#2A3140" },

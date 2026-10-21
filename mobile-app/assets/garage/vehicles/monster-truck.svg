@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180" role="img" aria-labelledby="title desc">
+  <title id="title">Monster Truck</title>
+  <desc id="desc">Scalable Rubberducky garage vehicle asset</desc>
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#287BFF"/><stop offset="1" stop-color="#17202c"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <ellipse cx="180" cy="163" rx="148" ry="9" fill="#000" opacity=".22"/><rect x="42" y="68" width="272" height="66" rx="18" fill="url(#paint)"/><path d="M78 68 108 30h90l42 38z" fill="url(#paint)"/><path d="M112 61 128 39h63l25 22z" fill="#B7DCEA" opacity=".9"/><circle cx="92" cy="132" r="23" fill="#171A21"/><circle cx="92" cy="132" r="12" fill="#D8E4E8"/><circle cx="268" cy="132" r="23" fill="#171A21"/><circle cx="268" cy="132" r="12" fill="#D8E4E8"/><circle cx="78" cy="135" r="30" fill="#171A21"/><circle cx="78" cy="135" r="14" fill="#B9F227"/><circle cx="288" cy="135" r="30" fill="#171A21"/><circle cx="288" cy="135" r="14" fill="#B9F227"/><rect x="260" y="85" width="42" height="13" rx="6" fill="#FFF6D0"/>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180" role="img" aria-labelledby="title desc">
+  <title id="title">Compact Car</title>
+  <desc id="desc">Scalable Rubberducky garage vehicle asset</desc>
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#32E6D3"/><stop offset="1" stop-color="#17202c"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <ellipse cx="180" cy="157" rx="132" ry="8" fill="#000" opacity=".22"/><path d="M36 116h286a16 16 0 0 0 0-32h-22L252 48c-10-11-26-17-42-17h-64c-21 0-41 9-53 26L74 84H52a16 16 0 0 0-16 16z" fill="url(#paint)"/><path d="M105 79 122 53c7-10 18-15 31-15h43c14 0 26 5 36 15l17 26z" fill="#B7DCEA" opacity=".9"/><circle cx="92" cy="128" r="22" fill="#171A21"/><circle cx="92" cy="128" r="11" fill="#D8E4E8"/><circle cx="268" cy="128" r="22" fill="#171A21"/><circle cx="268" cy="128" r="11" fill="#D8E4E8"/><rect x="286" y="95" width="25" height="10" rx="5" fill="#FFF6D0"/>
+</svg>

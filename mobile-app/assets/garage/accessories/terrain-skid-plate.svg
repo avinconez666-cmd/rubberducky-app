@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 180" role="img" aria-labelledby="title desc">
+  <title id="title">Terrain Skid Plate</title>
+  <desc id="desc">Scalable Rubberducky garage vehicle asset</desc>
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B9F227"/><stop offset="1" stop-color="#17202c"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <path d="M40 54h184l22 42-22 42H40l-22-42z" fill="#202633" stroke="#B9F227" stroke-width="5"/><path d="M62 74h140M55 96h154M62 118h140" stroke="#526A7A" stroke-width="6"/>
+</svg>
