@@ -162,7 +162,7 @@ function ChannelCard({ channel }: { channel: Channel }) {
         </View>
         <Text style={styles.channelCardDesc}>{channel.description}</Text>
         <View style={styles.channelCardFooter}>
-          <Text style={styles.channelCardMembers}>👥 {channel.memberCount} members</Text>
+          <Text style={styles.channelCardMembers}>On this phone</Text>
           {!isSystem && (
             <TouchableOpacity
               style={[styles.joinBtn, channel.isJoined && styles.leaveBtn]}

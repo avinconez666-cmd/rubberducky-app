@@ -19,6 +19,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { AppProvider } from "@/contexts/AppContext";
+import { GpsBridge } from "@/components/GpsBridge";
 import { useApp } from "@/contexts/AppContext";
 import { useRootNavigationState } from "expo-router";
 
@@ -102,6 +103,7 @@ export default function RootLayout() {
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <NavigationGate />
+          <GpsBridge />
           <StatusBar style="light" />
         </QueryClientProvider>
       </trpc.Provider>

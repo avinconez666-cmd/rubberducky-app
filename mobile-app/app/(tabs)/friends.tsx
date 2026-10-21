@@ -14,20 +14,15 @@ const VEHICLE_EMOJI = {
 
 export default function FriendsScreen() {
   const colors = useColors();
-  const { friends, addFriend, removeFriend, subscription } = useApp();
+  const { friends, addFriend, removeFriend } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [friendName, setFriendName] = useState("");
 
   const handleAddFriend = () => {
-    if (!subscription.canAddFriends) {
-      alert("Upgrade to Premium to add friends");
-      return;
-    }
-    if (friendName.trim()) {
-      addFriend(friendName);
-      setFriendName("");
-      setShowModal(false);
-    }
+    if (friendName.trim().length < 2) return;
+    addFriend(friendName);
+    setFriendName("");
+    setShowModal(false);
   };
 
   return (
@@ -45,20 +40,12 @@ export default function FriendsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Premium Badge */}
-          {!subscription.canAddFriends && (
-            <View className="bg-warning/20 border border-warning rounded-lg p-3 flex-row items-center gap-2">
-              <IconSymbol name="info.circle.fill" size={20} color={colors.warning} />
-              <Text className="text-warning text-sm flex-1">Upgrade to Premium to add friends</Text>
-            </View>
-          )}
-
-          {/* Friends List */}
+          <Text className="text-muted text-sm">Handles saved on this phone. Not live locations.</Text>
           {friends.length === 0 ? (
             <View className="flex-1 items-center justify-center gap-2">
               <IconSymbol name="person.3.fill" size={48} color={colors.muted} />
               <Text className="text-muted text-lg">No friends yet</Text>
-              <Text className="text-muted text-sm">Add friends to see their activity</Text>
+              <Text className="text-muted text-sm">Save a convoy handle to remember who you roll with</Text>
             </View>
           ) : (
             <FlatList
@@ -78,16 +65,7 @@ export default function FriendsScreen() {
                       <View className="flex-1">
                         <Text className="text-foreground font-semibold">{item.displayName}</Text>
                         <View className="flex-row items-center gap-1 mt-1">
-                          <View
-                            className={`w-2 h-2 rounded-full ${
-                              item.isOnline ? "bg-success" : "bg-muted"
-                            }`}
-                          />
-                          <Text className="text-muted text-xs">
-                            {item.isOnline
-                              ? "Online now"
-                              : `Last seen ${Math.floor((Date.now() - item.lastSeen) / 60000)} min ago`}
-                          </Text>
+                          <Text className="text-muted text-xs">Saved on this phone</Text>
                         </View>
                       </View>
                     </View>
@@ -128,7 +106,7 @@ export default function FriendsScreen() {
                 onChangeText={setFriendName}
                 className="bg-surface border border-border rounded-lg p-3 text-foreground"
               />
-              <Text className="text-muted text-xs">Enter your friend's driver handle</Text>
+              <Text className="text-muted text-xs">A name you will recognise. Nothing is sent off this phone.</Text>
             </View>
 
             {/* Buttons */}

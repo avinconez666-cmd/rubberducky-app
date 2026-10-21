@@ -13,88 +13,15 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Dimensions,
+  Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { useApp, Message, NearbyDriver, VehicleType } from "@/contexts/AppContext";
+import { useAudioPlayer, useAudioRecorder, RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync } from "expo-audio";
+import { useApp, Message } from "@/contexts/AppContext";
+import { LiveMap } from "@/components/LiveMap";
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
-
-// ─── Vehicle emoji map ────────────────────────────────────────────────────────
-const VEHICLE_EMOJI: Record<VehicleType, string> = {
-  car: "🚗",
-  truck: "🚛",
-  motorcycle: "🏍️",
-  rv: "🚐",
-};
-
-// ─── Simulated map grid ───────────────────────────────────────────────────────
-function MapBackground() {
-  return (
-    <View style={styles.mapBg}>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <View key={`h${i}`} style={[styles.roadH, { top: `${12 * (i + 1)}%` as any }]} />
-      ))}
-      {Array.from({ length: 6 }).map((_, i) => (
-        <View key={`v${i}`} style={[styles.roadV, { left: `${16 * (i + 1)}%` as any }]} />
-      ))}
-      <View style={[styles.roadH, styles.mainRoad, { top: "50%" }]} />
-      <View style={[styles.roadV, styles.mainRoad, { left: "50%" }]} />
-      <View style={styles.centerDot}>
-        <Text style={styles.centerDotText}>📍</Text>
-        <Text style={styles.centerDotLabel}>You</Text>
-      </View>
-    </View>
-  );
-}
-
-// ─── Nearby driver marker ─────────────────────────────────────────────────────
-function DriverMarker({ driver, index }: { driver: NearbyDriver; index: number }) {
-
-  const positions = [
-    { top: "25%", left: "20%" },
-    { top: "30%", right: "15%" },
-    { bottom: "35%", left: "25%" },
-    { bottom: "30%", right: "20%" },
-    { top: "55%", left: "10%" },
-    { top: "20%", left: "55%" },
-  ];
-  const pos = positions[index % positions.length];
-
-  return (
-    <View style={[styles.driverMarker, pos as any]}>
-      <View style={styles.driverBubble}>
-        <Text style={styles.driverEmoji}>{VEHICLE_EMOJI[driver.vehicleType]}</Text>
-      </View>
-      <View style={styles.driverLabel}>
-        <Text style={styles.driverName} numberOfLines={1}>{driver.displayName}</Text>
-      </View>
-    </View>
-  );
-}
-
-// ─── Hazard marker ────────────────────────────────────────────────────────────
-function HazardMarker({ hazard, index }: { hazard: any; index: number }) {
-  const HAZARD_EMOJI = {
-    accident: "🚗",
-    speed_camera: "📷",
-    police: "🚔",
-    debris: "🪨",
-  };
-  const positions = [
-    { top: "35%", right: "25%" },
-    { bottom: "40%", right: "30%" },
-    { top: "45%", left: "30%" },
-    { bottom: "25%", left: "35%" },
-  ];
-  const pos = positions[index % positions.length];
-
-  return (
-    <View style={[styles.hazardMarker, pos as any]}>
-      <Text style={styles.hazardEmoji}>{HAZARD_EMOJI[hazard.type as keyof typeof HAZARD_EMOJI]}</Text>
-    </View>
-  );
-}
+const { height: SCREEN_H } = Dimensions.get("window");
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
 function MessageBubble({ msg }: { msg: Message }) {
@@ -104,10 +31,7 @@ function MessageBubble({ msg }: { msg: Message }) {
         <Text style={styles.msgSender}>{msg.senderName}</Text>
       )}
       {msg.type === "voice" ? (
-        <View style={styles.voiceMsg}>
-          <Text style={styles.voiceIcon}>🎙️</Text>
-          <Text style={styles.voiceLabel}>{msg.content}</Text>
-        </View>
+        <VoiceClip label={msg.content} uri={msg.audioUri} />
       ) : (
         <Text style={[styles.msgText, msg.isOwn && styles.msgTextOwn]}>{msg.content}</Text>
       )}
@@ -115,6 +39,25 @@ function MessageBubble({ msg }: { msg: Message }) {
         {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
       </Text>
     </View>
+  );
+}
+
+function VoiceClip({ label, uri }: { label: string; uri?: string }) {
+  const player = useAudioPlayer(uri ? { uri } : null);
+  return (
+    <TouchableOpacity
+      style={styles.voiceMsg}
+      disabled={!uri}
+      onPress={() => {
+        if (!uri) return;
+        player.seekTo(0);
+        player.play();
+      }}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.voiceIcon}>🎙️</Text>
+      <Text style={styles.voiceLabel}>{uri ? `${label} · tap to play` : label}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -163,24 +106,27 @@ export default function MapScreen() {
     activeChannel,
     messages,
     nearbyDrivers,
+    practiceMode,
     isSafetyMode,
     currentSpeed,
-    isConnected,
     sendTextMessage,
     addVoiceMessage,
     hazards,
-    reportHazard,
-    subscription,
+    userLocation,
   } = useApp();
 
   const insets = useSafeAreaInsets();
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [textInput, setTextInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [showChannelSheet, setShowChannelSheet] = useState(false);
   const recordingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const secondsRef = useRef(0);
+  const recordingRef = useRef(false);
   const pttAnim = useRef(new Animated.Value(1)).current;
   const listRef = useRef<FlatList>(null);
+  const endRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -188,33 +134,58 @@ export default function MapScreen() {
     }
   }, [messages.length]);
 
-  const handlePTTStart = useCallback(() => {
+  const handlePTTEnd = useCallback(async () => {
+    if (!recordingRef.current) return;
+    recordingRef.current = false;
+    if (recordingTimer.current) clearInterval(recordingTimer.current);
+    setIsRecording(false);
+    Animated.spring(pttAnim, { toValue: 1, useNativeDriver: true }).start();
+    try {
+      await recorder.stop();
+    } catch {
+      // already stopped
+    }
+    const secs = secondsRef.current;
+    const uri = recorder.uri ?? undefined;
+    if (secs > 0) {
+      addVoiceMessage(`Voice clip (${secs}s)`, uri);
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    setRecordingSeconds(0);
+    secondsRef.current = 0;
+  }, [addVoiceMessage, pttAnim, recorder]);
+
+  endRef.current = () => {
+    void handlePTTEnd();
+  };
+
+  const handlePTTStart = useCallback(async () => {
+    if (recordingRef.current) return;
+    try {
+      const perm = await requestRecordingPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Microphone", "Allow the microphone to record a push-to-talk clip. Clips stay on this phone.");
+        return;
+      }
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+    } catch {
+      Alert.alert("Microphone", "Could not start recording.");
+      return;
+    }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    recordingRef.current = true;
+    secondsRef.current = 0;
     setIsRecording(true);
     setRecordingSeconds(0);
     Animated.spring(pttAnim, { toValue: 0.88, useNativeDriver: true }).start();
     recordingTimer.current = setInterval(() => {
-      setRecordingSeconds((s) => {
-        if (s >= 29) {
-          handlePTTEnd();
-          return 30;
-        }
-        return s + 1;
-      });
+      secondsRef.current += 1;
+      setRecordingSeconds(secondsRef.current);
+      if (secondsRef.current >= 30) endRef.current();
     }, 1000);
-  }, []);
-
-  const handlePTTEnd = useCallback(() => {
-    if (!isRecording) return;
-    if (recordingTimer.current) clearInterval(recordingTimer.current);
-    setIsRecording(false);
-    Animated.spring(pttAnim, { toValue: 1, useNativeDriver: true }).start();
-    if (recordingSeconds > 0) {
-      addVoiceMessage(`Voice message (${recordingSeconds}s)`);
-      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    setRecordingSeconds(0);
-  }, [isRecording, recordingSeconds, addVoiceMessage]);
+  }, [pttAnim, recorder]);
 
   const handleSendText = useCallback(() => {
     const t = textInput.trim();
@@ -229,13 +200,12 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapBackground />
-      {nearbyDrivers.map((d, i) => (
-        <DriverMarker key={d.id} driver={d} index={i} />
-      ))}
-      {hazards.filter((h) => h.expiresAt > Date.now()).map((h, i) => (
-        <HazardMarker key={h.id} hazard={h} index={i} />
-      ))}
+      <LiveMap
+        latitude={userLocation?.latitude ?? null}
+        longitude={userLocation?.longitude ?? null}
+        hazards={hazards}
+        drivers={practiceMode ? nearbyDrivers : []}
+      />
 
       {/* Top status bar */}
       <SafeAreaView edges={["top"]} style={styles.topBar}>
@@ -250,12 +220,12 @@ export default function MapScreen() {
             <Text style={styles.channelPillChevron}>▾</Text>
           </TouchableOpacity>
           <View style={styles.statusPills}>
-            <View style={[styles.statusPill, { backgroundColor: isConnected ? "#14532D" : "#7F1D1D" }]}>
-              <View style={[styles.statusDot, { backgroundColor: isConnected ? "#22C55E" : "#EF4444" }]} />
-              <Text style={styles.statusText}>{isConnected ? "Live" : "Offline"}</Text>
+            <View style={[styles.statusPill, { backgroundColor: practiceMode ? "#78350F" : "#1E293B" }]}>
+              <View style={[styles.statusDot, { backgroundColor: practiceMode ? "#F59E0B" : "#94A3B8" }]} />
+              <Text style={styles.statusText}>{practiceMode ? "Practice" : "This phone"}</Text>
             </View>
             <View style={styles.statusPill}>
-              <Text style={styles.statusText}>👥 {nearbyDrivers.length}</Text>
+              <Text style={styles.statusText}>{currentSpeed} km/h</Text>
             </View>
           </View>
         </View>
@@ -282,7 +252,9 @@ export default function MapScreen() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <Text style={styles.emptyMsg}>
-                No messages yet.{"\n"}Hold the PTT button to broadcast!
+                {practiceMode
+                  ? "Practice channel is on. Sample lines are not real drivers."
+                  : "Hold PTT to record a clip.\nClips stay on this phone."}
               </Text>
             }
           />

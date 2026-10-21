@@ -64,8 +64,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="subscription"
         options={{
-          title: "Premium",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="star.fill" color={color} />,
+          title: "Included",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="checkmark.circle.fill" color={color} />,
         }}
       />
       <Tabs.Screen

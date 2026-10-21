@@ -1,4 +1,6 @@
-# 10/4 Rubberducky - Project Summary
+> Out of date. The shipping app is `mobile-app/`. See README.md and PLAY_RELEASE.md. The backend described below was never in this repository.
+
+
 
 ## 📱 Overview
 

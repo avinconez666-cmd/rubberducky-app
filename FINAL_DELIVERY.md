@@ -1,4 +1,6 @@
-# 10/4 Rubberducky - Final Delivery Summary
+> Out of date. Not a production delivery. The shipping app is `mobile-app/`. See README.md and PLAY_RELEASE.md.
+
+
 
 ## 🎉 Project Completion
 

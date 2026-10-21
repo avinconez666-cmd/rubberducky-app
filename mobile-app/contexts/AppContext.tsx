@@ -8,7 +8,7 @@ export type VehicleType = "car" | "truck" | "motorcycle" | "rv";
 export type ChannelType = "public" | "emergency" | "custom";
 
 // ─── Hazard Report ────────────────────────────────────────────────────────────
-export type HazardType = "accident" | "speed_camera" | "police" | "debris";
+export type HazardType = "accident" | "debris" | "breakdown" | "animal" | "roadworks" | "weather";
 
 export interface HazardReport {
   id: string;
@@ -85,6 +85,7 @@ export interface Message {
   channelId: string;
   type: "text" | "voice";
   content: string; // text content or voice duration label
+  audioUri?: string;
   timestamp: number;
   isOwn: boolean;
 }
@@ -118,9 +119,14 @@ interface AppContextValue {
   // Messages
   messages: Message[];
   sendTextMessage: (content: string) => void;
-  addVoiceMessage: (durationLabel: string) => void;
-  // Nearby drivers
+  addVoiceMessage: (durationLabel: string, audioUri?: string) => void;
+  // Nearby drivers (practice channel only — not live people)
   nearbyDrivers: NearbyDriver[];
+  practiceMode: boolean;
+  setPracticeMode: (on: boolean) => void;
+  // GPS
+  userLocation: { latitude: number; longitude: number } | null;
+  setGpsSample: (sample: { latitude: number; longitude: number; speedKmh: number }) => void;
   // Safety mode
   isSafetyMode: boolean;
   currentSpeed: number;
@@ -151,7 +157,7 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: "public",
     name: "Public Nearby",
     type: "public",
-    description: "Open communication with all drivers in range",
+    description: "Your open channel. Clips stay on this phone.",
     memberCount: 0,
     radius: 2000,
     isJoined: true,
@@ -161,7 +167,7 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: "emergency",
     name: "Emergency",
     type: "emergency",
-    description: "Priority channel for hazards and emergencies",
+    description: "Local priority channel for hazards",
     memberCount: 0,
     radius: 10000,
     isJoined: true,
@@ -197,18 +203,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeChannel, setActiveChannelState] = useState<Channel>(DEFAULT_CHANNELS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [nearbyDrivers, setNearbyDrivers] = useState<NearbyDriver[]>([]);
+  const [practiceMode, setPracticeModeState] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isSafetyMode, setIsSafetyMode] = useState(false);
   const [currentSpeed, setCurrentSpeed] = useState(0);
-  const [isConnected, setIsConnected] = useState(true);
-  const speedSimRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isConnected] = useState(false);
+  const thresholdRef = useRef(10);
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [subscription, setSubscription] = useState<Subscription>({
     tier: "free",
     expiresAt: null,
-    canReportHazards: false,
-    canNavigate: false,
-    canAddFriends: false,
+    canReportHazards: true,
+    canNavigate: true,
+    canAddFriends: true,
   });
   const [navigation, setNavigationState] = useState<NavigationState>({
     destination: null,
@@ -231,13 +239,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const parsed: UserProfile = JSON.parse(stored);
           setUserState(parsed);
           setIsOnboarded(true);
-          // Simulate nearby drivers around a default location
-          setNearbyDrivers(generateNearbyDrivers(-33.8688, 151.2093));
+          thresholdRef.current = parsed.safetySpeedThreshold ?? 10;
         }
         const storedChannels = await AsyncStorage.getItem("rubberducky_channels");
         if (storedChannels) {
           const parsed: Channel[] = JSON.parse(storedChannels);
           setChannels(parsed);
+        }
+        const storedHazards = await AsyncStorage.getItem("rubberducky_hazards");
+        if (storedHazards) {
+          const parsed: HazardReport[] = JSON.parse(storedHazards);
+          setHazards(parsed.filter((h) => h.expiresAt > Date.now()));
+        }
+        const storedFriends = await AsyncStorage.getItem("rubberducky_friends");
+        if (storedFriends) {
+          const parsed: Friend[] = JSON.parse(storedFriends);
+          setFriends(parsed.map((f) => ({ ...f, isOnline: false })));
+        }
+        const storedPractice = await AsyncStorage.getItem("rubberducky_practice");
+        if (storedPractice === "1") {
+          setPracticeModeState(true);
+          setNearbyDrivers(generateNearbyDrivers(-31.9523, 115.8613));
         }
       } catch (_) {
         // ignore
@@ -247,50 +269,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  // Simulate speed changes (for safety mode demo)
   useEffect(() => {
-    if (!isOnboarded) return;
-    speedSimRef.current = setInterval(() => {
-      // Simulate occasional speed changes
-      const newSpeed = Math.random() > 0.7 ? Math.floor(Math.random() * 80) : 0;
-      setCurrentSpeed(newSpeed);
-      setIsSafetyMode(newSpeed > (user?.safetySpeedThreshold ?? 10));
-    }, 15000);
-    return () => {
-      if (speedSimRef.current) clearInterval(speedSimRef.current);
-    };
-  }, [isOnboarded, user?.safetySpeedThreshold]);
+    thresholdRef.current = user?.safetySpeedThreshold ?? 10;
+    setIsSafetyMode(currentSpeed > thresholdRef.current && thresholdRef.current < 900);
+  }, [user?.safetySpeedThreshold, currentSpeed]);
 
-  // Simulate incoming messages
+  // Practice channel only: sample lines so the radio UI can be learned.
+  // These are not other people, and they never mention enforcement.
   useEffect(() => {
-    if (!isOnboarded) return;
+    if (!isOnboarded || !practiceMode) return;
     const timer = setInterval(() => {
-      if (Math.random() > 0.6) {
-        const senders = ["DustDevil", "RoadRunner", "NightOwl", "TruckerMike"];
-        const texts = [
-          "Kangaroo on the road at the 50km marker, watch out!",
-          "Traffic jam ahead, take the bypass.",
-          "Anyone know a good servo near the highway?",
-          "10-4, copy that. Over.",
-          "Speed trap 2km ahead, slow down.",
-          "Beautiful sunset out here tonight!",
-          "Road works on the main highway, expect delays.",
-        ];
-        const incoming: Message = {
-          id: `msg-${Date.now()}`,
-          senderId: `driver-${Math.floor(Math.random() * 4)}`,
-          senderName: senders[Math.floor(Math.random() * senders.length)],
-          channelId: activeChannel.id,
-          type: "text",
-          content: texts[Math.floor(Math.random() * texts.length)],
-          timestamp: Date.now(),
-          isOwn: false,
-        };
-        setMessages((prev) => [...prev.slice(-49), incoming]);
-      }
-    }, 20000);
+      const senders = ["DustDevil", "RoadRunner", "NightOwl", "TruckerMike"];
+      const texts = [
+        "Practice clip: roadworks ahead, expect delays.",
+        "Practice clip: debris in the left lane.",
+        "Practice clip: anyone know a servo off the next exit?",
+        "10-4, practice copy. Over.",
+        "Practice clip: breakdown on the shoulder, give them room.",
+      ];
+      const incoming: Message = {
+        id: `practice-${Date.now()}`,
+        senderId: `practice-${Math.floor(Math.random() * 4)}`,
+        senderName: `${senders[Math.floor(Math.random() * senders.length)]} (practice)`,
+        channelId: activeChannel.id,
+        type: "text",
+        content: texts[Math.floor(Math.random() * texts.length)],
+        timestamp: Date.now(),
+        isOwn: false,
+      };
+      setMessages((prev) => [...prev.slice(-49), incoming]);
+    }, 25000);
     return () => clearInterval(timer);
-  }, [isOnboarded, activeChannel.id]);
+  }, [isOnboarded, practiceMode, activeChannel.id]);
 
   const setUser = useCallback((u: UserProfile) => {
     setUserState(u);
@@ -319,8 +329,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setUser(newUser);
     setIsOnboarded(true);
-    setNearbyDrivers(generateNearbyDrivers(-33.8688, 151.2093));
   }, [setUser]);
+
+  const setPracticeMode = useCallback((on: boolean) => {
+    setPracticeModeState(on);
+    AsyncStorage.setItem("rubberducky_practice", on ? "1" : "0").catch(() => {});
+    if (on) {
+      const lat = userLocation?.latitude ?? -31.9523;
+      const lng = userLocation?.longitude ?? 115.8613;
+      setNearbyDrivers(generateNearbyDrivers(lat, lng));
+    } else {
+      setNearbyDrivers([]);
+    }
+  }, [userLocation]);
+
+  const setGpsSample = useCallback((sample: { latitude: number; longitude: number; speedKmh: number }) => {
+    setUserLocation({ latitude: sample.latitude, longitude: sample.longitude });
+    const speed = Math.max(0, Math.round(sample.speedKmh));
+    setCurrentSpeed(speed);
+    const threshold = thresholdRef.current;
+    setIsSafetyMode(speed > threshold && threshold < 900);
+    setNavigationState((prev) => ({ ...prev, currentSpeed: speed }));
+  }, []);
 
   const setActiveChannel = useCallback((channel: Channel) => {
     setActiveChannelState(channel);
@@ -380,7 +410,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateUser({ messagesSent: (user.messagesSent ?? 0) + 1 });
   }, [user, activeChannel.id, updateUser]);
 
-  const addVoiceMessage = useCallback((durationLabel: string) => {
+  const addVoiceMessage = useCallback((durationLabel: string, audioUri?: string) => {
     if (!user) return;
     const msg: Message = {
       id: `msg-${Date.now()}`,
@@ -389,6 +419,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       channelId: activeChannel.id,
       type: "voice",
       content: durationLabel,
+      audioUri,
       timestamp: Date.now(),
       isOwn: true,
     };
@@ -397,7 +428,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [user, activeChannel.id, updateUser]);
 
   const reportHazard = useCallback((type: HazardType, description: string, lat: number, lng: number) => {
-    if (!subscription.canReportHazards) return;
     const hazard: HazardReport = {
       id: `hazard-${Date.now()}`,
       type,
@@ -406,11 +436,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       description,
       reportedBy: user?.displayName ?? "Anonymous",
       reportedAt: Date.now(),
-      expiresAt: Date.now() + 3600000, // 1 hour
+      expiresAt: Date.now() + 3600000,
       upvotes: 1,
     };
-    setHazards((prev) => [...prev, hazard]);
-  }, [user, subscription.canReportHazards]);
+    setHazards((prev) => {
+      const updated = [...prev, hazard];
+      AsyncStorage.setItem("rubberducky_hazards", JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, [user]);
 
   const upvoteHazard = useCallback((hazardId: string) => {
     setHazards((prev) =>
@@ -419,14 +453,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setDestination = useCallback((name: string, lat: number, lng: number) => {
-    if (!subscription.canNavigate) return;
     setNavigationState((prev) => ({
       ...prev,
       destination: name,
       destinationLat: lat,
       destinationLng: lng,
+      isNavigating: false,
     }));
-  }, [subscription.canNavigate]);
+  }, []);
 
   const startNavigation = useCallback(() => {
     setNavigationState((prev) => ({ ...prev, isNavigating: true }));
@@ -443,38 +477,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addFriend = useCallback((displayName: string) => {
-    if (!subscription.canAddFriends) return;
     const friend: Friend = {
       id: `friend-${Date.now()}`,
-      displayName,
+      displayName: displayName.trim(),
       vehicleType: "car",
-      isOnline: Math.random() > 0.5,
+      isOnline: false,
       lastSeen: Date.now(),
       latitude: null,
       longitude: null,
     };
-    setFriends((prev) => [...prev, friend]);
-  }, [subscription.canAddFriends]);
+    setFriends((prev) => {
+      const updated = [...prev, friend];
+      AsyncStorage.setItem("rubberducky_friends", JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
 
   const removeFriend = useCallback((friendId: string) => {
-    setFriends((prev) => prev.filter((f) => f.id !== friendId));
+    setFriends((prev) => {
+      const updated = prev.filter((f) => f.id !== friendId);
+      AsyncStorage.setItem("rubberducky_friends", JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
   }, []);
 
   const upgradeToPremium = useCallback(() => {
-    setSubscription({
-      tier: "premium",
-      expiresAt: Date.now() + 365 * 24 * 3600000, // 1 year
+    // v1.0 has no in-app purchase. Every feature ships free.
+    setSubscription((prev) => ({
+      ...prev,
       canReportHazards: true,
       canNavigate: true,
       canAddFriends: true,
-    });
-    if (user) {
-      AsyncStorage.setItem("rubberducky_subscription", JSON.stringify({
-        tier: "premium",
-        expiresAt: Date.now() + 365 * 24 * 3600000,
-      })).catch(() => {});
-    }
-  }, [user]);
+    }));
+  }, []);
 
   return (
     <AppContext.Provider
@@ -495,6 +530,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         sendTextMessage,
         addVoiceMessage,
         nearbyDrivers,
+        practiceMode,
+        setPracticeMode,
+        userLocation,
+        setGpsSample,
         isSafetyMode,
         currentSpeed,
         isConnected,

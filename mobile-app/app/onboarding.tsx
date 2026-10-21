@@ -75,10 +75,10 @@ export default function OnboardingScreen() {
           {/* Feature highlights */}
           <View style={styles.features}>
             {[
-              { icon: "📍", text: "See nearby drivers on the map" },
-              { icon: "🎙️", text: "Push-to-talk voice messaging" },
-              { icon: "🚨", text: "Emergency channel always available" },
-              { icon: "🔒", text: "Anonymous by default, privacy first" },
+              { icon: "📍", text: "Your GPS pin and speed stay on this phone" },
+              { icon: "🎙️", text: "Push-to-talk clips you can play back" },
+              { icon: "🛡️", text: "Text locks itself once you are moving" },
+              { icon: "🔒", text: "No account and no subscription" },
             ].map((f, i) => (
               <View key={i} style={styles.featureRow}>
                 <Text style={styles.featureIcon}>{f.icon}</Text>
@@ -90,7 +90,7 @@ export default function OnboardingScreen() {
           {/* Name input */}
           <View style={styles.section}>
             <Text style={styles.label}>Your Handle</Text>
-            <Text style={styles.labelHint}>This is how other drivers will see you</Text>
+            <Text style={styles.labelHint}>Shown on your clips and hazard pins. Not sent anywhere in this release.</Text>
             <TextInput
               style={styles.input}
               value={name}

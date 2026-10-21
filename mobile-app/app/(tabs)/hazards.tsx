@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, Text, View, TouchableOpacity, Modal, TextInput, FlatList } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, Modal, TextInput, FlatList, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useApp } from "@/contexts/AppContext";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -7,28 +7,31 @@ import { useColors } from "@/hooks/use-colors";
 import type { HazardType } from "@/contexts/AppContext";
 
 const HAZARD_TYPES: { type: HazardType; label: string; emoji: string }[] = [
-  { type: "accident", label: "Accident", emoji: "🚗" },
-  { type: "speed_camera", label: "Speed Camera", emoji: "📷" },
-  { type: "police", label: "Police", emoji: "🚔" },
+  { type: "accident", label: "Accident", emoji: "💥" },
   { type: "debris", label: "Debris", emoji: "🪨" },
+  { type: "breakdown", label: "Breakdown", emoji: "🛠️" },
+  { type: "animal", label: "Animal", emoji: "🦘" },
+  { type: "roadworks", label: "Roadworks", emoji: "🚧" },
+  { type: "weather", label: "Weather", emoji: "🌧️" },
 ];
 
 export default function HazardsScreen() {
   const colors = useColors();
-  const { hazards, reportHazard, upvoteHazard, subscription } = useApp();
+  const { hazards, reportHazard, upvoteHazard, userLocation } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [selectedType, setSelectedType] = useState<HazardType>("accident");
   const [description, setDescription] = useState("");
 
   const handleReport = () => {
-    if (!subscription.canReportHazards) {
-      alert("Upgrade to Premium to report hazards");
+    if (!userLocation) {
+      Alert.alert("Location needed", "Turn on location so the pin is dropped where you actually are.");
       return;
     }
-    // Simulate location (Sydney, Australia)
-    const lat = -33.8688 + (Math.random() - 0.5) * 0.05;
-    const lng = 151.2093 + (Math.random() - 0.5) * 0.05;
-    reportHazard(selectedType, description, lat, lng);
+    if (!description.trim()) {
+      Alert.alert("Add a note", "Say what other drivers should look for.");
+      return;
+    }
+    reportHazard(selectedType, description.trim(), userLocation.latitude, userLocation.longitude);
     setDescription("");
     setSelectedType("accident");
     setShowModal(false);
@@ -51,15 +54,7 @@ export default function HazardsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Premium Badge */}
-          {!subscription.canReportHazards && (
-            <View className="bg-warning/20 border border-warning rounded-lg p-3 flex-row items-center gap-2">
-              <IconSymbol name="info.circle.fill" size={20} color={colors.warning} />
-              <Text className="text-warning text-sm flex-1">Upgrade to Premium to report hazards</Text>
-            </View>
-          )}
-
-          {/* Active Hazards List */}
+          <Text className="text-muted text-sm">Pins stay on this phone and drop off after 1 hour.</Text>
           {activeHazards.length === 0 ? (
             <View className="flex-1 items-center justify-center gap-2">
               <Text className="text-muted text-lg">No active hazard reports</Text>

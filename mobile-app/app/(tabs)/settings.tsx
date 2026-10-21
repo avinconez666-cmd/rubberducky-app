@@ -8,7 +8,7 @@ import {
   TextInput,
   Switch,
   Platform,
-  Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -60,7 +60,7 @@ function SettingRow({
 }
 
 export default function SettingsScreen() {
-  const { user, updateUser, isSafetyMode, currentSpeed, nearbyDrivers, messages } = useApp();
+  const { user, updateUser, isSafetyMode, currentSpeed, messages, practiceMode, setPracticeMode } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(user?.displayName ?? "");
 
@@ -120,8 +120,8 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{nearbyDrivers.length}</Text>
-            <Text style={styles.statLabel}>Nearby</Text>
+            <Text style={styles.statValue}>{messages.length}</Text>
+            <Text style={styles.statLabel}>On screen</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
@@ -163,7 +163,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <SettingRow
             label="Show on Map"
-            sublabel="Other drivers can see your location"
+            sublabel="Reserved for a future live channel. Off in this release — nothing is shared."
             right={
               <Switch
                 value={user.isVisible}
@@ -172,6 +172,25 @@ export default function SettingsScreen() {
                   if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
                 trackColor={{ false: "#334155", true: "#22C55E" }}
+                thumbColor="#F8FAFC"
+              />
+            }
+          />
+        </View>
+
+        <SectionHeader title="Practice channel" />
+        <View style={styles.card}>
+          <SettingRow
+            label="Sample drivers"
+            sublabel="Shows labelled practice pins and lines so you can learn the radio. They are not real people."
+            right={
+              <Switch
+                value={practiceMode}
+                onValueChange={(v) => {
+                  setPracticeMode(v);
+                  if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                trackColor={{ false: "#334155", true: "#F59E0B" }}
                 thumbColor="#F8FAFC"
               />
             }
@@ -233,11 +252,16 @@ export default function SettingsScreen() {
         {/* About */}
         <SectionHeader title="About" />
         <View style={styles.card}>
-          <SettingRow label="Version" right={<Text style={styles.valueText}>1.0.0</Text>} />
+          <SettingRow label="Version" right={<Text style={styles.valueText}>1.0.0 (1)</Text>} />
           <View style={styles.rowDivider} />
-          <SettingRow label="Session ID" sublabel="Rotates each session for privacy" right={<Text style={styles.valueText}>{user.id.slice(-8)}</Text>} />
+          <SettingRow label="Package" right={<Text style={styles.valueText}>app.tenfour.rubberducky</Text>} />
           <View style={styles.rowDivider} />
-          <SettingRow label="Privacy" sublabel="No location stored beyond session" right={<Text style={styles.valueText}>🔒 On</Text>} />
+          <TouchableOpacity
+            onPress={() => Linking.openURL("https://avinconez666-cmd.github.io/rubberducky-app/privacy.html")}
+            activeOpacity={0.7}
+          >
+            <SettingRow label="Privacy policy" sublabel="Location and microphone stay on this phone" right={<Text style={styles.valueText}>Open</Text>} />
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: 40 }} />
