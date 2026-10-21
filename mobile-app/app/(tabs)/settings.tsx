@@ -29,6 +29,7 @@ const RADIUS_OPTIONS = [
   { label: "1 km", value: 1000 },
   { label: "2 km", value: 2000 },
   { label: "5 km", value: 5000 },
+  { label: "All", value: 0 },
 ];
 
 const SPEED_OPTIONS = [
@@ -176,7 +177,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <SettingRow
             label="Show on Map"
-            sublabel="Reserved for a future live channel. Off in this release — nothing is shared."
+            sublabel="While the relay is connected and the app is open, other drivers on that relay can see your position. It stops when you leave or switch this off."
             right={
               <Switch
                 value={user.isVisible}
@@ -259,7 +260,7 @@ export default function SettingsScreen() {
         {/* Proximity radius */}
         <SectionHeader title="Proximity Radius" />
         <View style={styles.card}>
-          <Text style={styles.cardSubLabel}>Discover drivers within this range</Text>
+          <Text style={styles.cardSubLabel}>Other live drivers farther than this stay off your map. All shows everyone on your relay.</Text>
           <View style={styles.optionRow}>
             {RADIUS_OPTIONS.map((opt) => (
               <TouchableOpacity

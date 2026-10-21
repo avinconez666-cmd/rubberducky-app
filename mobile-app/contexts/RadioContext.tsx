@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import * as FileSystem from "expo-file-system/legacy";
-import { useApp, type HazardType, type Message } from "@/contexts/AppContext";
+import { useApp, type HazardType, type Message, type NearbyDriver, type VehicleType } from "@/contexts/AppContext";
 import { noteHasPlate } from "@/lib/plates";
 
 interface RadioValue {
@@ -15,6 +15,7 @@ interface RadioValue {
   announceTx: (on: boolean) => void;
   publishHazard: (type: HazardType, description: string, lat: number, lng: number, id: string) => void;
   pushProfile: () => void;
+  liveDrivers: NearbyDriver[];
 }
 
 const RadioContext = createContext<RadioValue | null>(null);
@@ -22,6 +23,7 @@ const RadioContext = createContext<RadioValue | null>(null);
 export function RadioProvider({ children }: { children: React.ReactNode }) {
   const {
     user,
+    userLocation,
     relayUrl,
     activeChannel,
     setRelayConnected,
@@ -34,11 +36,14 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
   const [statusDetail, setStatusDetail] = useState("No relay set");
   const [onAir, setOnAir] = useState<string | null>(null);
   const [online, setOnline] = useState<{ handle: string; vehicle: string }[]>([]);
+  const [liveDrivers, setLiveDrivers] = useState<NearbyDriver[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const userRef = useRef(user);
   const channelRef = useRef(activeChannel);
+  const locRef = useRef(userLocation);
   userRef.current = user;
   channelRef.current = activeChannel;
+  locRef.current = userLocation;
 
   const send = useCallback((obj: unknown) => {
     const ws = wsRef.current;
@@ -53,6 +58,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
       setStatusDetail(user ? "Add a relay URL in Settings" : "Sign on first");
       setRelayConnected(false);
       setOnline([]);
+      setLiveDrivers([]);
       return;
     }
 
@@ -90,21 +96,41 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         } catch {
           return;
         }
-        if (msg.type === "hello_ok") {
-          setStatus("live");
-          setStatusDetail("Public room is open");
-          setRelayConnected(true);
-          const roster = Array.isArray(msg.roster) ? msg.roster : [];
-          setOnline(roster.map((r) => ({ handle: String((r as { handle?: string }).handle || ""), vehicle: String((r as { vehicle?: string }).vehicle || "car") })));
-          return;
-        }
-        if (msg.type === "presence") {
-          const roster = Array.isArray(msg.roster) ? msg.roster : [];
-          const list = roster.map((r) => ({ handle: String((r as { handle?: string }).handle || ""), vehicle: String((r as { vehicle?: string }).vehicle || "car") }));
-          setOnline(list);
-          const names = new Set(list.map((r) => r.handle.toLowerCase()));
-          // presence refresh is applied by friends screen via `online`
-          void names;
+        if (msg.type === "hello_ok" || msg.type === "positions" || msg.type === "presence") {
+          if (msg.type !== "positions") {
+            const roster = Array.isArray(msg.roster) ? msg.roster : [];
+            setOnline(roster.map((r) => ({ handle: String((r as { handle?: string }).handle || ""), vehicle: String((r as { vehicle?: string }).vehicle || "car") })));
+          }
+          if (msg.type === "hello_ok") {
+            setStatus("live");
+            setStatusDetail("Public room is open");
+            setRelayConnected(true);
+          }
+          if (msg.type === "hello_ok" || msg.type === "positions") {
+            const me = userRef.current?.displayName?.toLowerCase() ?? "";
+            const rows = Array.isArray(msg.positions) ? msg.positions : [];
+            const drivers: NearbyDriver[] = [];
+            rows.forEach((row) => {
+              const item = row as { handle?: string; vehicle?: string; lat?: number; lng?: number; heading?: number };
+              const handle = String(item.handle || "");
+              const lat = Number(item.lat);
+              const lng = Number(item.lng);
+              if (!handle || handle.toLowerCase() === me || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+              const vehicle = String(item.vehicle || "car");
+              const vehicleType: VehicleType = vehicle === "truck" || vehicle === "motorcycle" || vehicle === "rv" ? vehicle : "car";
+              drivers.push({
+                id: `live-${handle.toLowerCase()}`,
+                displayName: handle,
+                vehicleType,
+                latitude: lat,
+                longitude: lng,
+                heading: Number.isFinite(Number(item.heading)) ? Number(item.heading) : null,
+                channelId: "live",
+                lastSeen: Date.now(),
+              });
+            });
+            setLiveDrivers(drivers);
+          }
           return;
         }
         if (msg.type === "error") {
@@ -206,6 +232,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
       ws.onclose = () => {
         setRelayConnected(false);
         setOnAir(null);
+        setLiveDrivers([]);
         if (stopped) return;
         setStatus("connecting");
         setStatusDetail("Relay dropped. Redialling…");
@@ -221,6 +248,28 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
       wsRef.current = null;
     };
   }, [relayUrl, user?.id, user?.displayName, ingestHazard, pushRoadAlert, receiveRadioMessage, setRelayConnected, upsertFriend]);
+
+  useEffect(() => {
+    if (status !== "live") return;
+    const pushLoc = () => {
+      const me = userRef.current;
+      const loc = locRef.current;
+      if (!me?.isVisible || !loc) {
+        send({ type: "loc", visible: false });
+        return;
+      }
+      send({
+        type: "loc",
+        visible: true,
+        lat: loc.latitude,
+        lng: loc.longitude,
+        heading: loc.heading,
+      });
+    };
+    pushLoc();
+    const timer = setInterval(pushLoc, 3000);
+    return () => clearInterval(timer);
+  }, [status, user?.isVisible, send]);
 
   const requestFriend = useCallback((handle: string) => {
     send({ type: "friend_request", handle });
@@ -282,6 +331,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         announceTx,
         publishHazard,
         pushProfile,
+        liveDrivers,
       }}
     >
       {children}

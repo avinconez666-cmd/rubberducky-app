@@ -53,12 +53,13 @@ const HTML = `<!DOCTYPE html>
       L.marker([c.lat, c.lng], { icon: icon }).addTo(layer).bindPopup(c.label || 'Published camera');
     });
     (data.drivers || []).forEach(function (d) {
+      const live = d.live === true;
       const icon = L.divIcon({
         className: '',
-        html: '<div style="font-size:18px">' + (d.emoji || '🚗') + '</div>',
-        iconSize: [22, 22], iconAnchor: [11, 11]
+        html: '<div style="text-align:center;font-family:sans-serif"><div style="font-size:20px;line-height:20px">' + (d.emoji || '🚗') + '</div><div style="margin-top:2px;font-size:10px;font-weight:700;color:#F4F0E6;background:rgba(9,11,16,.82);border-radius:6px;padding:1px 4px;white-space:nowrap">' + (d.name || 'Driver') + '</div></div>',
+        iconSize: [72, 36], iconAnchor: [36, 16]
       });
-      L.marker([d.lat, d.lng], { icon: icon }).addTo(layer).bindPopup((d.name || 'Practice') + ' (practice)');
+      L.marker([d.lat, d.lng], { icon: icon }).addTo(layer).bindPopup((d.name || 'Driver') + (live ? ' · live' : ' · practice'));
     });
   };
 </script>
@@ -121,6 +122,7 @@ export function LiveMap({
         lng: d.longitude,
         emoji: VEHICLE_EMOJI[d.vehicleType] ?? "🚗",
         name: d.displayName,
+        live: d.channelId === "live",
       })),
       cameras: cameras ?? [],
       paint: paint ?? "#E4B15A",

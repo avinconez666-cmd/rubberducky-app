@@ -81,6 +81,7 @@ export interface NearbyDriver {
   longitude: number;
   channelId: string;
   lastSeen: number; // timestamp
+  heading?: number | null;
 }
 
 export interface Message {

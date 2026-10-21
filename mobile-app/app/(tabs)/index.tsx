@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import * as FileSystem from "expo-file-system/legacy";
 import { useRadio } from "@/contexts/RadioContext";
 import { nearestCameras } from "@/lib/cameras";
+import { haversineMeters } from "@/lib/geo";
 import {
   View,
   Text,
@@ -263,6 +264,12 @@ export default function MapScreen() {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [textInput, sendTextMessage, radio, activeChannel?.id]);
 
+  const radius = user?.proximityRadius ?? 2000;
+  const liveNearby = radio.liveDrivers.filter((driver) => {
+    if (!userLocation || radius <= 0) return true;
+    return haversineMeters(userLocation.latitude, userLocation.longitude, driver.latitude, driver.longitude) <= radius;
+  });
+  const mapDrivers = isConnected ? liveNearby : practiceMode ? nearbyDrivers : [];
   const channelColor = activeChannel?.color ?? "#22C55E";
   const recentMessages = messages.filter((m) => m.channelId === (activeChannel?.id ?? "public")).slice(-20);
   const cameras = useMemo(() => {
@@ -282,7 +289,7 @@ export default function MapScreen() {
         latitude={userLocation?.latitude ?? null}
         longitude={userLocation?.longitude ?? null}
         hazards={hazards}
-        drivers={practiceMode ? nearbyDrivers : []}
+        drivers={mapDrivers}
         cameras={cameras}
         paint={user?.car?.paint}
       />

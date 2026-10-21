@@ -11,7 +11,7 @@ import { WebSocketServer } from "ws";
 const port = Number(process.env.PORT || 8787);
 const wss = new WebSocketServer({ port });
 
-/** @type {Map<import('ws').WebSocket, {handle:string, vehicle:string, car:unknown}>} */
+/** @type {Map<import('ws').WebSocket, {handle:string, vehicle:string, car:unknown, lat:number|null, lng:number|null, heading:number|null, at:number, visible:boolean}>} */
 const clients = new Map();
 /** @type {Map<string, Set<string>>} */
 const friends = new Map();
@@ -31,6 +31,23 @@ function roster() {
     vehicle: p.vehicle,
     car: p.car,
   }));
+}
+
+function positions() {
+  const now = Date.now();
+  return [...clients.values()]
+    .filter((p) => p.visible && p.lat != null && p.lng != null && now - p.at < 20000)
+    .map((p) => ({
+      handle: p.handle,
+      vehicle: p.vehicle,
+      lat: p.lat,
+      lng: p.lng,
+      heading: p.heading,
+    }));
+}
+
+function broadcastPositions() {
+  broadcast({ type: "positions", positions: positions() });
 }
 
 function broadcast(obj, except) {
@@ -92,8 +109,13 @@ wss.on("connection", (ws) => {
         handle,
         vehicle: String(msg.vehicle || "car"),
         car: msg.car ?? null,
+        lat: null,
+        lng: null,
+        heading: null,
+        at: 0,
+        visible: false,
       });
-      send(ws, { type: "hello_ok", roster: roster(), friends: [...(friends.get(key(handle)) ?? [])] });
+      send(ws, { type: "hello_ok", roster: roster(), positions: positions(), friends: [...(friends.get(key(handle)) ?? [])] });
       broadcast({ type: "presence", roster: roster() }, ws);
       return;
     }
@@ -104,6 +126,19 @@ wss.on("connection", (ws) => {
       me.vehicle = String(msg.vehicle || me.vehicle);
       me.car = msg.car ?? me.car;
       broadcast({ type: "presence", roster: roster() });
+      return;
+    }
+
+    if (msg.type === "loc") {
+      const lat = Number(msg.lat);
+      const lng = Number(msg.lng);
+      const visible = msg.visible !== false && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+      me.visible = visible;
+      me.lat = visible ? Math.round(lat * 1e5) / 1e5 : null;
+      me.lng = visible ? Math.round(lng * 1e5) / 1e5 : null;
+      me.heading = visible && Number.isFinite(Number(msg.heading)) ? Number(msg.heading) : null;
+      me.at = Date.now();
+      broadcastPositions();
       return;
     }
 
@@ -183,7 +218,10 @@ wss.on("connection", (ws) => {
   ws.on("close", () => {
     const me = clients.get(ws);
     clients.delete(ws);
-    if (me) broadcast({ type: "presence", roster: roster(), left: me.handle });
+    if (me) {
+      broadcast({ type: "presence", roster: roster(), left: me.handle });
+      broadcastPositions();
+    }
   });
 });
 
