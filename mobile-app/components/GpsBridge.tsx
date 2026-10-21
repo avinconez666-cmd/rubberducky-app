@@ -23,10 +23,12 @@ export function GpsBridge() {
         (loc) => {
           const raw = loc.coords.speed;
           const speedKmh = raw == null || raw < 0 ? 0 : raw * 3.6;
+          const heading = loc.coords.heading != null && loc.coords.heading >= 0 ? loc.coords.heading : null;
           setGpsSample({
             latitude: loc.coords.latitude,
             longitude: loc.coords.longitude,
             speedKmh,
+            heading,
           });
         },
       );

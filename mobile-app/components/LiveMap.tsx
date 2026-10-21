@@ -31,7 +31,8 @@ const HTML = `<!DOCTYPE html>
     if (!data || typeof data.lat !== 'number') return;
     const ll = [data.lat, data.lng];
     you.setLatLng(ll);
-    if (!followed) { map.setView(ll, 15); followed = true; }
+  you.setStyle && you.setStyle({ color: data.paint || '#F59E0B' });
+  if (!followed) { map.setView(ll, 15); followed = true; }
     layer.clearLayers();
     (data.hazards || []).forEach(function (h) {
       const icon = L.divIcon({
@@ -40,6 +41,14 @@ const HTML = `<!DOCTYPE html>
         iconSize: [24, 24], iconAnchor: [12, 12]
       });
       L.marker([h.lat, h.lng], { icon: icon }).addTo(layer).bindPopup(h.label || 'Hazard');
+    });
+    (data.cameras || []).forEach(function (c) {
+      const icon = L.divIcon({
+        className: '',
+        html: '<div style="font-size:16px">' + (c.kind === 'redlight' ? '🚦' : '📷') + '</div>',
+        iconSize: [18, 18], iconAnchor: [9, 9]
+      });
+      L.marker([c.lat, c.lng], { icon: icon }).addTo(layer).bindPopup(c.label || 'Published camera');
     });
     (data.drivers || []).forEach(function (d) {
       const icon = L.divIcon({
@@ -75,11 +84,15 @@ export function LiveMap({
   longitude,
   hazards,
   drivers,
+  cameras,
+  paint,
 }: {
   latitude: number | null;
   longitude: number | null;
   hazards: HazardReport[];
   drivers: NearbyDriver[];
+  cameras?: { lat: number; lng: number; kind: string; label: string }[];
+  paint?: string;
 }) {
   const ref = useRef<WebView>(null);
   const ready = useRef(false);
@@ -103,8 +116,10 @@ export function LiveMap({
         emoji: VEHICLE_EMOJI[d.vehicleType] ?? "🚗",
         name: d.displayName,
       })),
+      cameras: cameras ?? [],
+      paint: paint ?? "#F59E0B",
     });
-  }, [latitude, longitude, hazards, drivers]);
+  }, [latitude, longitude, hazards, drivers, cameras, paint]);
 
   const push = () => {
     if (!ready.current || !payload) return;

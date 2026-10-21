@@ -71,6 +71,13 @@ const config: ExpoConfig = {
       },
     ],
     [
+      "expo-image-picker",
+      {
+        photosPermission: "10/4 Rubberducky uses a photo you pick as your driver profile picture.",
+        cameraPermission: "10/4 Rubberducky uses the camera if you take a profile photo.",
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/images/splash-icon.png",

@@ -27,6 +27,10 @@ npx eas-cli build -p android --profile production
 - Text locks when GPS speed passes the limit you set
 - Hazard pins: accident, debris, breakdown, animal, roadworks, weather. One hour, on device
 - Place search, then handoff to Google Maps for turn-by-turn
-- Optional practice channel with labelled sample drivers (off by default)
+- Public two-way radio room and a friends-only convoy room, once you point Settings at a relay (`relay/server.mjs`)
+- Friend requests by handle
+- Profile photo and a car garage (paint, wheels, accessories)
+- 347 signposted NSW fixed and red-light cameras from Transport for NSW open data, with an ahead warning
+- Community camera and traffic-stop pins (traffic-stop pins expire after 45 minutes)
 
 No account. No subscription. No background location. No police or speed-camera alerts.

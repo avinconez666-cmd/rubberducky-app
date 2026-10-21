@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { DEFAULT_CAR, normaliseCar, type CarStyle } from "@/constants/garage";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -8,7 +9,7 @@ export type VehicleType = "car" | "truck" | "motorcycle" | "rv";
 export type ChannelType = "public" | "emergency" | "custom";
 
 // ─── Hazard Report ────────────────────────────────────────────────────────────
-export type HazardType = "accident" | "debris" | "breakdown" | "animal" | "roadworks" | "weather";
+export type HazardType = "accident" | "debris" | "breakdown" | "animal" | "roadworks" | "weather" | "speed_camera" | "police";
 
 export interface HazardReport {
   id: string;
@@ -44,6 +45,7 @@ export interface Friend {
   lastSeen: number;
   latitude: number | null;
   longitude: number | null;
+  status: "accepted" | "incoming" | "outgoing";
 }
 
 // ─── Subscription ─────────────────────────────────────────────────────────────
@@ -99,6 +101,14 @@ export interface UserProfile {
   safetySpeedThreshold: number; // km/h
   sessionStartTime: number;
   messagesSent: number;
+  photoUri: string | null;
+  car: CarStyle;
+}
+
+export interface RoadAlert {
+  title: string;
+  body: string;
+  until: number;
 }
 
 interface AppContextValue {
@@ -120,21 +130,28 @@ interface AppContextValue {
   messages: Message[];
   sendTextMessage: (content: string) => void;
   addVoiceMessage: (durationLabel: string, audioUri?: string) => void;
+  receiveRadioMessage: (message: Message) => void;
   // Nearby drivers (practice channel only — not live people)
   nearbyDrivers: NearbyDriver[];
   practiceMode: boolean;
   setPracticeMode: (on: boolean) => void;
   // GPS
-  userLocation: { latitude: number; longitude: number } | null;
-  setGpsSample: (sample: { latitude: number; longitude: number; speedKmh: number }) => void;
+  userLocation: { latitude: number; longitude: number; heading: number | null } | null;
+  setGpsSample: (sample: { latitude: number; longitude: number; speedKmh: number; heading: number | null }) => void;
+  roadAlert: RoadAlert | null;
+  pushRoadAlert: (title: string, body: string, ms?: number) => void;
   // Safety mode
   isSafetyMode: boolean;
   currentSpeed: number;
   // Connection
   isConnected: boolean;
+  setRelayConnected: (on: boolean) => void;
+  relayUrl: string;
+  setRelayUrl: (url: string) => void;
   // Hazards
   hazards: HazardReport[];
   reportHazard: (type: HazardType, description: string, lat: number, lng: number) => void;
+  ingestHazard: (hazard: HazardReport) => void;
   upvoteHazard: (hazardId: string) => void;
   // Navigation
   navigation: NavigationState;
@@ -144,6 +161,7 @@ interface AppContextValue {
   // Friends
   friends: Friend[];
   addFriend: (displayName: string) => void;
+  upsertFriend: (friend: Friend) => void;
   removeFriend: (friendId: string) => void;
   // Subscription
   subscription: Subscription;
@@ -157,7 +175,7 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: "public",
     name: "Public Nearby",
     type: "public",
-    description: "Your open channel. Clips stay on this phone.",
+    description: "Open two-way radio. Everyone on the relay can hear this room.",
     memberCount: 0,
     radius: 2000,
     isJoined: true,
@@ -172,6 +190,16 @@ const DEFAULT_CHANNELS: Channel[] = [
     radius: 10000,
     isJoined: true,
     color: "#EF4444",
+  },
+  {
+    id: "convoy",
+    name: "Convoy",
+    type: "custom",
+    description: "Accepted friends only",
+    memberCount: 0,
+    radius: 0,
+    isJoined: true,
+    color: "#3B82F6",
   },
 ];
 
@@ -204,10 +232,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [nearbyDrivers, setNearbyDrivers] = useState<NearbyDriver[]>([]);
   const [practiceMode, setPracticeModeState] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; heading: number | null } | null>(null);
+  const [roadAlert, setRoadAlert] = useState<RoadAlert | null>(null);
   const [isSafetyMode, setIsSafetyMode] = useState(false);
   const [currentSpeed, setCurrentSpeed] = useState(0);
-  const [isConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [relayUrl, setRelayUrlState] = useState("");
   const thresholdRef = useRef(10);
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -236,16 +266,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         const stored = await AsyncStorage.getItem("rubberducky_user");
         if (stored) {
-          const parsed: UserProfile = JSON.parse(stored);
-          setUserState(parsed);
+          const parsed = JSON.parse(stored) as UserProfile;
+          const withCar: UserProfile = {
+            ...parsed,
+            photoUri: parsed.photoUri ?? null,
+            car: normaliseCar(parsed.car),
+          };
+          setUserState(withCar);
           setIsOnboarded(true);
           thresholdRef.current = parsed.safetySpeedThreshold ?? 10;
         }
         const storedChannels = await AsyncStorage.getItem("rubberducky_channels");
         if (storedChannels) {
           const parsed: Channel[] = JSON.parse(storedChannels);
-          setChannels(parsed);
+          const hasConvoy = parsed.some((c) => c.id === "convoy");
+          setChannels(hasConvoy ? parsed : [...parsed, DEFAULT_CHANNELS[2]]);
         }
+        const storedRelay = await AsyncStorage.getItem("rubberducky_relay");
+        if (storedRelay) setRelayUrlState(storedRelay);
         const storedHazards = await AsyncStorage.getItem("rubberducky_hazards");
         if (storedHazards) {
           const parsed: HazardReport[] = JSON.parse(storedHazards);
@@ -254,7 +292,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const storedFriends = await AsyncStorage.getItem("rubberducky_friends");
         if (storedFriends) {
           const parsed: Friend[] = JSON.parse(storedFriends);
-          setFriends(parsed.map((f) => ({ ...f, isOnline: false })));
+          setFriends(parsed.map((f) => ({ ...f, isOnline: false, status: f.status ?? "accepted" })));
         }
         const storedPractice = await AsyncStorage.getItem("rubberducky_practice");
         if (storedPractice === "1") {
@@ -326,6 +364,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       safetySpeedThreshold: 10,
       sessionStartTime: Date.now(),
       messagesSent: 0,
+      photoUri: null,
+      car: { ...DEFAULT_CAR, body: vehicle === "truck" ? "truck" : vehicle === "rv" ? "van" : vehicle === "motorcycle" ? "bike" : "sedan" },
     };
     setUser(newUser);
     setIsOnboarded(true);
@@ -343,13 +383,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userLocation]);
 
-  const setGpsSample = useCallback((sample: { latitude: number; longitude: number; speedKmh: number }) => {
-    setUserLocation({ latitude: sample.latitude, longitude: sample.longitude });
+  const setGpsSample = useCallback((sample: { latitude: number; longitude: number; speedKmh: number; heading: number | null }) => {
+    setUserLocation({ latitude: sample.latitude, longitude: sample.longitude, heading: sample.heading });
     const speed = Math.max(0, Math.round(sample.speedKmh));
     setCurrentSpeed(speed);
     const threshold = thresholdRef.current;
     setIsSafetyMode(speed > threshold && threshold < 900);
     setNavigationState((prev) => ({ ...prev, currentSpeed: speed }));
+  }, []);
+
+  const pushRoadAlert = useCallback((title: string, body: string, ms = 12000) => {
+    setRoadAlert({ title, body, until: Date.now() + ms });
+  }, []);
+
+  const setRelayConnected = useCallback((on: boolean) => {
+    setIsConnected(on);
+  }, []);
+
+  const setRelayUrl = useCallback((url: string) => {
+    const next = url.trim();
+    setRelayUrlState(next);
+    AsyncStorage.setItem("rubberducky_relay", next).catch(() => {});
   }, []);
 
   const setActiveChannel = useCallback((channel: Channel) => {
@@ -410,6 +464,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateUser({ messagesSent: (user.messagesSent ?? 0) + 1 });
   }, [user, activeChannel.id, updateUser]);
 
+  const receiveRadioMessage = useCallback((message: Message) => {
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === message.id)) return prev;
+      return [...prev.slice(-49), message];
+    });
+  }, []);
+
   const addVoiceMessage = useCallback((durationLabel: string, audioUri?: string) => {
     if (!user) return;
     const msg: Message = {
@@ -436,7 +497,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       description,
       reportedBy: user?.displayName ?? "Anonymous",
       reportedAt: Date.now(),
-      expiresAt: Date.now() + 3600000,
+      expiresAt: Date.now() + (type === "police" ? 45 : 60) * 60 * 1000,
       upvotes: 1,
     };
     setHazards((prev) => {
@@ -445,6 +506,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
   }, [user]);
+
+  const ingestHazard = useCallback((hazard: HazardReport) => {
+    setHazards((prev) => {
+      if (prev.some((h) => h.id === hazard.id)) return prev;
+      const updated = [...prev, hazard];
+      AsyncStorage.setItem("rubberducky_hazards", JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
 
   const upvoteHazard = useCallback((hazardId: string) => {
     setHazards((prev) =>
@@ -485,9 +555,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lastSeen: Date.now(),
       latitude: null,
       longitude: null,
+      status: "outgoing",
     };
     setFriends((prev) => {
       const updated = [...prev, friend];
+      AsyncStorage.setItem("rubberducky_friends", JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
+  const upsertFriend = useCallback((friend: Friend) => {
+    setFriends((prev) => {
+      const idx = prev.findIndex((f) => f.displayName.toLowerCase() === friend.displayName.toLowerCase());
+      const updated = idx >= 0 ? prev.map((f, i) => (i === idx ? { ...f, ...friend, id: f.id } : f)) : [...prev, friend];
       AsyncStorage.setItem("rubberducky_friends", JSON.stringify(updated)).catch(() => {});
       return updated;
     });
@@ -529,16 +609,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         messages,
         sendTextMessage,
         addVoiceMessage,
+        receiveRadioMessage,
         nearbyDrivers,
         practiceMode,
         setPracticeMode,
         userLocation,
         setGpsSample,
+        roadAlert,
+        pushRoadAlert,
         isSafetyMode,
         currentSpeed,
         isConnected,
+        setRelayConnected,
+        relayUrl,
+        setRelayUrl,
         hazards,
         reportHazard,
+        ingestHazard,
         upvoteHazard,
         navigation,
         setDestination,
@@ -546,6 +633,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         stopNavigation,
         friends,
         addFriend,
+        upsertFriend,
         removeFriend,
         subscription,
         upgradeToPremium,

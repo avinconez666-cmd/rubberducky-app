@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ScrollView, Text, View, TouchableOpacity, Modal, TextInput, FlatList, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useApp } from "@/contexts/AppContext";
+import { useRadio } from "@/contexts/RadioContext";
+import { CAMERA_COUNT, CAMERA_SOURCE } from "@/lib/cameras";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import type { HazardType } from "@/contexts/AppContext";
@@ -13,11 +15,14 @@ const HAZARD_TYPES: { type: HazardType; label: string; emoji: string }[] = [
   { type: "animal", label: "Animal", emoji: "🦘" },
   { type: "roadworks", label: "Roadworks", emoji: "🚧" },
   { type: "weather", label: "Weather", emoji: "🌧️" },
+  { type: "speed_camera", label: "Camera", emoji: "📷" },
+  { type: "police", label: "Traffic stop", emoji: "🚔" },
 ];
 
 export default function HazardsScreen() {
   const colors = useColors();
   const { hazards, reportHazard, upvoteHazard, userLocation } = useApp();
+  const radio = useRadio();
   const [showModal, setShowModal] = useState(false);
   const [selectedType, setSelectedType] = useState<HazardType>("accident");
   const [description, setDescription] = useState("");
@@ -32,6 +37,8 @@ export default function HazardsScreen() {
       return;
     }
     reportHazard(selectedType, description.trim(), userLocation.latitude, userLocation.longitude);
+    const id = `hazard-${Date.now()}`;
+    radio.publishHazard(selectedType, description.trim(), userLocation.latitude, userLocation.longitude, id);
     setDescription("");
     setSelectedType("accident");
     setShowModal(false);
@@ -54,7 +61,9 @@ export default function HazardsScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text className="text-muted text-sm">Pins stay on this phone and drop off after 1 hour.</Text>
+          <Text className="text-muted text-sm">
+            Pins stay on this phone for an hour. A traffic-stop pin lasts 45 minutes. {CAMERA_COUNT} signposted NSW cameras are already on the map. {CAMERA_SOURCE}
+          </Text>
           {activeHazards.length === 0 ? (
             <View className="flex-1 items-center justify-center gap-2">
               <Text className="text-muted text-lg">No active hazard reports</Text>

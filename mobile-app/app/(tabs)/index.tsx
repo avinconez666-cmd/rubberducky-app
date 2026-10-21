@@ -1,6 +1,9 @@
 // Re-export from the actual map screen file to avoid duplicate
 // The map screen is defined in this file directly
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import * as FileSystem from "expo-file-system/legacy";
+import { useRadio } from "@/contexts/RadioContext";
+import { nearestCameras } from "@/lib/cameras";
 import {
   View,
   Text,
@@ -113,10 +116,13 @@ export default function MapScreen() {
     addVoiceMessage,
     hazards,
     userLocation,
+    roadAlert,
+    isConnected,
   } = useApp();
+  const radio = useRadio();
 
   const insets = useSafeAreaInsets();
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorder = useAudioRecorder(RecordingPresets.LOW_QUALITY);
   const [textInput, setTextInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -147,13 +153,23 @@ export default function MapScreen() {
     }
     const secs = secondsRef.current;
     const uri = recorder.uri ?? undefined;
+    radio.announceTx(false);
     if (secs > 0) {
       addVoiceMessage(`Voice clip (${secs}s)`, uri);
+      const room = activeChannel?.id === "public" || activeChannel?.id === "convoy";
+      if (uri && room) {
+        try {
+          const b64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+          if (b64.length > 0 && b64.length < 280000) radio.broadcastVoice(b64, secs);
+        } catch {
+          // local clip still plays
+        }
+      }
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setRecordingSeconds(0);
     secondsRef.current = 0;
-  }, [addVoiceMessage, pttAnim, recorder]);
+  }, [addVoiceMessage, pttAnim, recorder, radio, activeChannel?.id]);
 
   endRef.current = () => {
     void handlePTTEnd();
@@ -176,6 +192,7 @@ export default function MapScreen() {
     }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     recordingRef.current = true;
+    radio.announceTx(true);
     secondsRef.current = 0;
     setIsRecording(true);
     setRecordingSeconds(0);
@@ -185,18 +202,29 @@ export default function MapScreen() {
       setRecordingSeconds(secondsRef.current);
       if (secondsRef.current >= 30) endRef.current();
     }, 1000);
-  }, [pttAnim, recorder]);
+  }, [pttAnim, recorder, radio]);
 
   const handleSendText = useCallback(() => {
     const t = textInput.trim();
     if (!t) return;
     sendTextMessage(t);
+    if (activeChannel?.id === "public" || activeChannel?.id === "convoy") radio.broadcastText(t);
     setTextInput("");
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [textInput, sendTextMessage]);
+  }, [textInput, sendTextMessage, radio, activeChannel?.id]);
 
   const channelColor = activeChannel?.color ?? "#22C55E";
-  const recentMessages = messages.slice(-20);
+  const recentMessages = messages.filter((m) => m.channelId === (activeChannel?.id ?? "public")).slice(-20);
+  const cameras = useMemo(() => {
+    if (!userLocation) return [];
+    return nearestCameras(userLocation.latitude, userLocation.longitude, 10, 20000).map((cam) => ({
+      lat: cam.lat,
+      lng: cam.lng,
+      kind: cam.kind,
+      label: `${cam.kind === "redlight" ? "Red-light camera" : "Fixed speed camera"} · ${cam.road}, ${cam.suburb}`,
+    }));
+  }, [userLocation]);
+  const alertLive = roadAlert && roadAlert.until > Date.now() ? roadAlert : null;
 
   return (
     <View style={styles.container}>
@@ -205,6 +233,8 @@ export default function MapScreen() {
         longitude={userLocation?.longitude ?? null}
         hazards={hazards}
         drivers={practiceMode ? nearbyDrivers : []}
+        cameras={cameras}
+        paint={user?.car?.paint}
       />
 
       {/* Top status bar */}
@@ -220,9 +250,9 @@ export default function MapScreen() {
             <Text style={styles.channelPillChevron}>▾</Text>
           </TouchableOpacity>
           <View style={styles.statusPills}>
-            <View style={[styles.statusPill, { backgroundColor: practiceMode ? "#78350F" : "#1E293B" }]}>
-              <View style={[styles.statusDot, { backgroundColor: practiceMode ? "#F59E0B" : "#94A3B8" }]} />
-              <Text style={styles.statusText}>{practiceMode ? "Practice" : "This phone"}</Text>
+            <View style={[styles.statusPill, { backgroundColor: isConnected ? "#14532D" : practiceMode ? "#78350F" : "#1E293B" }]}>
+              <View style={[styles.statusDot, { backgroundColor: isConnected ? "#22C55E" : practiceMode ? "#F59E0B" : "#94A3B8" }]} />
+              <Text style={styles.statusText}>{isConnected ? "Live room" : practiceMode ? "Practice" : "Relay off"}</Text>
             </View>
             <View style={styles.statusPill}>
               <Text style={styles.statusText}>{currentSpeed} km/h</Text>
@@ -230,6 +260,20 @@ export default function MapScreen() {
           </View>
         </View>
       </SafeAreaView>
+
+      {alertLive && (
+        <View style={styles.safetyBanner}>
+          <Text style={styles.safetyIcon}>⚠️</Text>
+          <Text style={styles.safetyText}>{alertLive.title} — {alertLive.body}</Text>
+        </View>
+      )}
+
+      {radio.onAir && (
+        <View style={[styles.safetyBanner, { top: alertLive ? 132 : 80, backgroundColor: "#7F1D1D" }]}>
+          <Text style={styles.safetyIcon}>🎙️</Text>
+          <Text style={styles.safetyText}>{radio.onAir} is on the mic</Text>
+        </View>
+      )}
 
       {isSafetyMode && (
         <View style={styles.safetyBanner}>
@@ -252,9 +296,11 @@ export default function MapScreen() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <Text style={styles.emptyMsg}>
-                {practiceMode
+                {isConnected
+                  ? "Public room is live. Hold PTT to talk. One mic at a time."
+                  : practiceMode
                   ? "Practice channel is on. Sample lines are not real drivers."
-                  : "Hold PTT to record a clip.\nClips stay on this phone."}
+                  : "Hold PTT to record. Add a relay in Settings to open the two-way room."}
               </Text>
             }
           />

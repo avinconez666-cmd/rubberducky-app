@@ -19,7 +19,9 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { AppProvider } from "@/contexts/AppContext";
+import { RadioProvider } from "@/contexts/RadioContext";
 import { GpsBridge } from "@/components/GpsBridge";
+import { RoadAlerts } from "@/components/RoadAlerts";
 import { useApp } from "@/contexts/AppContext";
 import { useRootNavigationState } from "expo-router";
 
@@ -104,6 +106,7 @@ export default function RootLayout() {
           </Stack>
           <NavigationGate />
           <GpsBridge />
+          <RoadAlerts />
           <StatusBar style="light" />
         </QueryClientProvider>
       </trpc.Provider>
@@ -115,6 +118,7 @@ export default function RootLayout() {
   if (shouldOverrideSafeArea) {
     return (
       <AppProvider>
+        <RadioProvider>
         <ThemeProvider>
           <SafeAreaProvider initialMetrics={providerInitialMetrics}>
             <SafeAreaFrameContext.Provider value={frame}>
@@ -124,15 +128,18 @@ export default function RootLayout() {
             </SafeAreaFrameContext.Provider>
           </SafeAreaProvider>
         </ThemeProvider>
+        </RadioProvider>
       </AppProvider>
     );
   }
 
   return (
     <AppProvider>
-      <ThemeProvider>
-        <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
-      </ThemeProvider>
+      <RadioProvider>
+        <ThemeProvider>
+          <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
+        </ThemeProvider>
+      </RadioProvider>
     </AppProvider>
   );
 }

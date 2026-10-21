@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -60,9 +60,14 @@ function SettingRow({
 }
 
 export default function SettingsScreen() {
-  const { user, updateUser, isSafetyMode, currentSpeed, messages, practiceMode, setPracticeMode } = useApp();
+  const { user, updateUser, isSafetyMode, currentSpeed, messages, practiceMode, setPracticeMode, relayUrl, setRelayUrl, isConnected } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(user?.displayName ?? "");
+  const [relayDraft, setRelayDraft] = useState(relayUrl);
+
+  useEffect(() => {
+    setRelayDraft(relayUrl);
+  }, [relayUrl]);
 
   if (!user) return null;
 
@@ -247,6 +252,28 @@ export default function SettingsScreen() {
               Emergency channel is always accessible regardless of safety mode.
             </Text>
           </View>
+        </View>
+
+        <SectionHeader title="Radio relay" />
+        <View style={styles.card}>
+          <Text style={styles.cardSubLabel}>
+            {isConnected ? "Live room connected." : "Paste the address of your relay, like ws://192.168.1.20:8787"}
+          </Text>
+          <TextInput
+            style={styles.nameInput}
+            value={relayDraft}
+            onChangeText={setRelayDraft}
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="ws://your-server:8787"
+            placeholderTextColor="#64748B"
+          />
+          <TouchableOpacity
+            style={[styles.nameSaveBtn, { alignSelf: "flex-start", marginTop: 10 }]}
+            onPress={() => setRelayUrl(relayDraft)}
+          >
+            <Text style={styles.nameSaveTxt}>Save relay</Text>
+          </TouchableOpacity>
         </View>
 
         {/* About */}

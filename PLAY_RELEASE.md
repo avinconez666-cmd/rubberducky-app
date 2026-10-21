@@ -67,7 +67,7 @@ Location and microphone are optional. The app still opens if you deny them. The 
 - No ads.
 - Not directed at children. Do not enrol in Designed for Families.
 - Do not declare background location. The app only uses location while it is open.
-- Hazard types are road conditions only. There is no police or speed-camera reporting.
+- Hazard pins include road conditions, a community camera report, and a community traffic-stop report. There is no route that avoids cameras.
 
 ## 5. Before you press Roll out
 
@@ -75,4 +75,20 @@ Location and microphone are optional. The app still opens if you deny them. The 
 2. Allow location and microphone.
 3. Confirm the map centres on you, a PTT clip plays back, a hazard pin lands on your position, and Safety Mode appears when you are actually moving.
 4. Confirm Settings → Practice channel is off unless you want the sample pins.
-5. Open the privacy URL in a browser and paste that same URL into Play Console.
+5. Open the privacy URL and paste it into Play Console.
+## Radio
+
+The public room is off until a relay is running. From `relay/`:
+
+```bash
+npm install
+node server.mjs
+```
+
+On the phone, Settings → Radio relay → `ws://YOUR_LAN_IP:8787` (or `wss://` once you put it behind TLS). Both drivers must use the same relay and different handles.
+
+## Cameras and traffic stops
+
+The map ships Transport for NSW’s published fixed and red-light camera coordinates. They are signposted sites, not a detector, and they do not cover Western Australia or the other states. Drivers can drop a camera pin or a traffic-stop pin. A traffic-stop pin expires after 45 minutes. Copy in the app tells people to obey the posted limit. There is no “route around cameras” feature.
+
+Data safety addition: if the user sets a relay, handle, voice clips, text, and published hazard locations are sent to that server. Say that in the form. If they never set one, it stays on the device.

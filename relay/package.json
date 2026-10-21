@@ -1,0 +1,8 @@
+{
+  "name": "rubberducky-relay",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.18.2"
+  }
+}
