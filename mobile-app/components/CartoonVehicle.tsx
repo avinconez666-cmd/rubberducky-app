@@ -1,4 +1,5 @@
 import React from "react";
+import { Image, StyleSheet, View } from "react-native";
 import Svg, { Circle, Ellipse, G, Line, Path, Rect } from "react-native-svg";
 import type { CarBody, CarStyle, WheelStyle } from "@/constants/garage";
 
@@ -11,6 +12,52 @@ function shade(hex: string, amount: number) {
   const g = mix((n >> 8) & 255);
   const b = mix(n & 255);
   return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+const RENDERED_VEHICLES: Partial<Record<CarBody, number>> = {
+  sedan: require("@/assets/garage/renders/cartoon_compact_car.png"),
+  ute: require("@/assets/garage/renders/cartoon_adventure_van.png"),
+  suv: require("@/assets/garage/renders/cartoon_monster_truck.png"),
+  wagon: require("@/assets/garage/renders/cartoon_adventure_van.png"),
+  coupe: require("@/assets/garage/renders/cartoon_compact_car.png"),
+  van: require("@/assets/garage/renders/cartoon_adventure_van.png"),
+  truck: require("@/assets/garage/renders/cartoon_monster_truck.png"),
+  rig: require("@/assets/garage/renders/cartoon_monster_truck.png"),
+  bike: require("@/assets/garage/renders/cartoon_scooter.png"),
+};
+
+const RENDERED_ACCESSORIES: Record<string, number> = {
+  roofpod: require("@/assets/garage/renders/accessory_roof_cargo_pod.png"),
+  spoiler: require("@/assets/garage/renders/accessory_holo_spoiler.png"),
+  bullbar: require("@/assets/garage/renders/accessory_plasma_bumper.png"),
+  lightbar: require("@/assets/garage/renders/accessory_neon_underglow.png"),
+  antenna: require("@/assets/garage/renders/accessory_sensor_antenna.png"),
+  drone: require("@/assets/garage/renders/accessory_drone_dock.png"),
+};
+
+const renderedStyles = StyleSheet.create({
+  stage: { position: "relative", alignItems: "center", justifyContent: "center" },
+  vehicle: { width: "100%", height: "100%" },
+  accessory: { position: "absolute" },
+});
+
+function RenderedVehicle({ body, accessories, width }: { body: CarBody; accessories: string[]; width: number }) {
+  const vehicleSource = RENDERED_VEHICLES[body];
+  if (!vehicleSource) return null;
+  const renderedAccessories = accessories.filter((id) => RENDERED_ACCESSORIES[id]);
+  return (
+    <View style={[renderedStyles.stage, { width, height: width * 0.58 }]}>
+      <Image source={vehicleSource} style={renderedStyles.vehicle} resizeMode="contain" />
+      {renderedAccessories.map((id, index) => (
+        <Image
+          key={`${id}-${index}`}
+          source={RENDERED_ACCESSORIES[id]}
+          style={[renderedStyles.accessory, { width: width * 0.26, height: width * 0.26, left: width * (0.37 + index * 0.035), top: width * (0.04 + (index % 2) * 0.035) }]}
+          resizeMode="contain"
+        />
+      ))}
+    </View>
+  );
 }
 
 function Wheel({ x, y, r, style }: { x: number; y: number; r: number; style: WheelStyle }) {
@@ -169,6 +216,8 @@ const WHEELS: Record<CarBody, { x: number; y: number; r: number }[]> = {
 };
 
 export function CartoonVehicle({ car, width = 340 }: { car: CarStyle; width?: number }) {
+  const rendered = RenderedVehicle({ body: car.body, accessories: car.accessories, width });
+  if (rendered) return rendered;
   const height = Math.round(width * 0.5);
   const on = new Set(car.accessories);
   const front = car.body === "bike" ? 236 : car.body === "truck" ? 300 : 312;
