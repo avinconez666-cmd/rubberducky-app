@@ -14,21 +14,22 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#F59E0B",
-        tabBarInactiveTintColor: "#64748B",
+        tabBarActiveTintColor: "#E4B15A",
+        tabBarInactiveTintColor: "#7E8796",
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          paddingTop: 8,
+          paddingTop: 6,
           paddingBottom: bottomPadding,
           height: tabBarHeight,
-          backgroundColor: "#0F172A",
-          borderTopColor: "#1E293B",
+          backgroundColor: "#090B10",
+          borderTopColor: "#2A3140",
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: "600",
+          letterSpacing: 0.2,
           marginTop: 2,
         },
       }}

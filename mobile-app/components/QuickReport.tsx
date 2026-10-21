@@ -78,7 +78,7 @@ export function QuickReport({
             value={note}
             onChangeText={setNote}
             placeholder={mode === "mobile" ? "e.g. Kwinana Fwy northbound" : "e.g. couch in the left lane"}
-            placeholderTextColor="#64748B"
+            placeholderTextColor="#7E8796"
             className="bg-surface border border-border rounded-lg p-3 text-foreground"
           />
           <View className="flex-row gap-2">

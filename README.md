@@ -29,7 +29,7 @@ npx eas-cli build -p android --profile production
 - Place search, then handoff to Google Maps for turn-by-turn
 - Public two-way radio room and a friends-only convoy room, once you point Settings at a relay (`relay/server.mjs`)
 - Friend requests by handle
-- Profile photo and a car garage (paint, wheels, accessories)
+- Profile photo and a cartoon garage: nine bodies, thirteen paints, six wheel styles, and sixteen accessories. Most of the kit unlocks from voice clips, texts, pins, an accepted friend, or kilometres driven with the app open.
 - 347 signposted NSW fixed and red-light cameras from Transport for NSW open data, with an ahead warning
 - Roadside help opens 000, the state motoring club on 13 11 11, maps for a tow or mobile mechanic, and a text with your location. It does not book anything.
 - GPS accuracy: Saver, Standard, or Best, shown as ± metres on the map

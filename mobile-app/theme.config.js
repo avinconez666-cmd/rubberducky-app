@@ -1,25 +1,15 @@
 /** @type {const} */
 const themeColors = {
-  // Amber/yellow — CB radio feel, primary brand color
-  primary: { light: '#D97706', dark: '#F59E0B' },
-  // Dark navy background — night-driving friendly
-  background: { light: '#0F172A', dark: '#0F172A' },
-  // Slightly lighter navy for cards/surfaces
-  surface: { light: '#1E293B', dark: '#1E293B' },
-  // Near-white text
-  foreground: { light: '#F8FAFC', dark: '#F8FAFC' },
-  // Muted slate text
-  muted: { light: '#94A3B8', dark: '#94A3B8' },
-  // Subtle border
-  border: { light: '#334155', dark: '#334155' },
-  // Channel green — Public Nearby
-  success: { light: '#22C55E', dark: '#4ADE80' },
-  // Warning amber
-  warning: { light: '#F59E0B', dark: '#FBBF24' },
-  // Emergency red
-  error: { light: '#EF4444', dark: '#F87171' },
-  // Channel blue — Custom Groups
-  info: { light: '#3B82F6', dark: '#60A5FA' },
+  primary: { light: '#C8922A', dark: '#E4B15A' },
+  background: { light: '#090B10', dark: '#090B10' },
+  surface: { light: '#12151C', dark: '#12151C' },
+  foreground: { light: '#F4F0E6', dark: '#F4F0E6' },
+  muted: { light: '#9AA3B2', dark: '#9AA3B2' },
+  border: { light: '#2A3140', dark: '#2A3140' },
+  success: { light: '#2F9E6B', dark: '#3DDC97' },
+  warning: { light: '#E4B15A', dark: '#E4B15A' },
+  error: { light: '#C4453C', dark: '#E06A62' },
+  info: { light: '#6E8CA8', dark: '#8FB4D4' },
 };
 
 module.exports = { themeColors };

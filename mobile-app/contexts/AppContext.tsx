@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_CAR, normaliseCar, type CarStyle } from "@/constants/garage";
+import { DEFAULT_CAR, EMPTY_STATS, normaliseCar, normaliseStats, type CarStyle, type DriverStats } from "@/constants/garage";
+import { haversineMeters } from "@/lib/geo";
 import { normaliseGpsAccuracy, type GpsAccuracy } from "@/lib/gps";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -105,6 +106,7 @@ export interface UserProfile {
   photoUri: string | null;
   car: CarStyle;
   gpsAccuracy: GpsAccuracy;
+  stats: DriverStats;
 }
 
 export interface RoadAlert {
@@ -241,6 +243,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [relayUrl, setRelayUrlState] = useState("");
   const thresholdRef = useRef(10);
+  const lastFix = useRef<{ lat: number; lng: number } | null>(null);
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [subscription, setSubscription] = useState<Subscription>({
@@ -274,6 +277,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             photoUri: parsed.photoUri ?? null,
             car: normaliseCar(parsed.car),
             gpsAccuracy: normaliseGpsAccuracy(parsed.gpsAccuracy),
+            stats: normaliseStats(parsed.stats),
           };
           setUserState(withCar);
           setIsOnboarded(true);
@@ -370,6 +374,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       photoUri: null,
       car: { ...DEFAULT_CAR, body: vehicle === "truck" ? "truck" : vehicle === "rv" ? "van" : vehicle === "motorcycle" ? "bike" : "sedan" },
       gpsAccuracy: "standard",
+      stats: { ...EMPTY_STATS },
     };
     setUser(newUser);
     setIsOnboarded(true);
@@ -387,6 +392,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userLocation]);
 
+  const bumpStats = useCallback((partial: Partial<DriverStats>) => {
+    setUserState((prev) => {
+      if (!prev) return prev;
+      const stats = normaliseStats(prev.stats);
+      const next: DriverStats = { ...stats };
+      (Object.keys(partial) as (keyof DriverStats)[]).forEach((key) => {
+        next[key] = stats[key] + (partial[key] ?? 0);
+      });
+      const updated = { ...prev, stats: next };
+      AsyncStorage.setItem("rubberducky_user", JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
   const setGpsSample = useCallback((sample: { latitude: number; longitude: number; speedKmh: number; heading: number | null; accuracyM: number | null }) => {
     setUserLocation({ latitude: sample.latitude, longitude: sample.longitude, heading: sample.heading, accuracyM: sample.accuracyM });
     const speed = Math.max(0, Math.round(sample.speedKmh));
@@ -394,7 +413,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const threshold = thresholdRef.current;
     setIsSafetyMode(speed > threshold && threshold < 900);
     setNavigationState((prev) => ({ ...prev, currentSpeed: speed }));
-  }, []);
+    if (lastFix.current) {
+      const delta = haversineMeters(lastFix.current.lat, lastFix.current.lng, sample.latitude, sample.longitude);
+      if (delta >= 12 && delta < 400 && speed < 180) bumpStats({ metres: delta });
+    }
+    lastFix.current = { lat: sample.latitude, lng: sample.longitude };
+  }, [bumpStats]);
 
   const pushRoadAlert = useCallback((title: string, body: string, ms = 12000) => {
     setRoadAlert({ title, body, until: Date.now() + ms });
@@ -466,7 +490,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setMessages((prev) => [...prev.slice(-49), msg]);
     updateUser({ messagesSent: (user.messagesSent ?? 0) + 1 });
-  }, [user, activeChannel.id, updateUser]);
+    bumpStats({ texts: 1 });
+  }, [user, activeChannel.id, updateUser, bumpStats]);
 
   const receiveRadioMessage = useCallback((message: Message) => {
     setMessages((prev) => {
@@ -490,7 +515,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setMessages((prev) => [...prev.slice(-49), msg]);
     updateUser({ messagesSent: (user.messagesSent ?? 0) + 1 });
-  }, [user, activeChannel.id, updateUser]);
+    bumpStats({ voiceClips: 1 });
+  }, [user, activeChannel.id, updateUser, bumpStats]);
 
   const reportHazard = useCallback((type: HazardType, description: string, lat: number, lng: number) => {
     const hazard: HazardReport = {
@@ -509,7 +535,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.setItem("rubberducky_hazards", JSON.stringify(updated)).catch(() => {});
       return updated;
     });
-  }, [user]);
+    bumpStats({ hazards: 1 });
+  }, [user, bumpStats]);
 
   const ingestHazard = useCallback((hazard: HazardReport) => {
     setHazards((prev) => {
@@ -569,13 +596,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const upsertFriend = useCallback((friend: Friend) => {
+    let grant = false;
     setFriends((prev) => {
       const idx = prev.findIndex((f) => f.displayName.toLowerCase() === friend.displayName.toLowerCase());
+      const wasAccepted = idx >= 0 && prev[idx].status === "accepted";
+      grant = friend.status === "accepted" && !wasAccepted;
       const updated = idx >= 0 ? prev.map((f, i) => (i === idx ? { ...f, ...friend, id: f.id } : f)) : [...prev, friend];
       AsyncStorage.setItem("rubberducky_friends", JSON.stringify(updated)).catch(() => {});
       return updated;
     });
-  }, []);
+    if (grant) bumpStats({ friends: 1 });
+  }, [bumpStats]);
 
   const removeFriend = useCallback((friendId: string) => {
     setFriends((prev) => {

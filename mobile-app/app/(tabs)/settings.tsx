@@ -136,7 +136,7 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, isSafetyMode && { color: "#F59E0B" }]}>
+            <Text style={[styles.statValue, isSafetyMode && { color: "#E4B15A" }]}>
               {isSafetyMode ? `${currentSpeed}` : "0"}
             </Text>
             <Text style={styles.statLabel}>km/h</Text>
@@ -177,8 +177,8 @@ export default function SettingsScreen() {
                   updateUser({ isVisible: v });
                   if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                trackColor={{ false: "#334155", true: "#22C55E" }}
-                thumbColor="#F8FAFC"
+                trackColor={{ false: "#2A3140", true: "#22C55E" }}
+                thumbColor="#F4F0E6"
               />
             }
           />
@@ -196,8 +196,8 @@ export default function SettingsScreen() {
                   setPracticeMode(v);
                   if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                trackColor={{ false: "#334155", true: "#F59E0B" }}
-                thumbColor="#F8FAFC"
+                trackColor={{ false: "#2A3140", true: "#E4B15A" }}
+                thumbColor="#F4F0E6"
               />
             }
           />
@@ -294,7 +294,7 @@ export default function SettingsScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="ws://your-server:8787"
-            placeholderTextColor="#64748B"
+            placeholderTextColor="#7E8796"
           />
           <TouchableOpacity
             style={[styles.nameSaveBtn, { alignSelf: "flex-start", marginTop: 10 }]}
@@ -328,7 +328,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#090B10",
   },
   scroll: {
     paddingHorizontal: 20,
@@ -337,23 +337,23 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     gap: 14,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
   },
   profileAvatar: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#090B10",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#F59E0B",
+    borderColor: "#E4B15A",
   },
   profileAvatarEmoji: {
     fontSize: 28,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#F8FAFC",
+    color: "#F4F0E6",
   },
   profileId: {
     fontSize: 11,
@@ -379,17 +379,17 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#090B10",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
     fontSize: 16,
-    color: "#F8FAFC",
+    color: "#F4F0E6",
     borderWidth: 1,
-    borderColor: "#F59E0B",
+    borderColor: "#E4B15A",
   },
   nameSaveBtn: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#E4B15A",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -397,16 +397,16 @@ const styles = StyleSheet.create({
   nameSaveTxt: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#090B10",
   },
   statusCard: {
     flexDirection: "row",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 14,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
   },
   statItem: {
     flex: 1,
@@ -416,16 +416,16 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#F8FAFC",
+    color: "#F4F0E6",
   },
   statLabel: {
     fontSize: 11,
-    color: "#64748B",
+    color: "#7E8796",
     fontWeight: "600",
   },
   statDivider: {
     width: 1,
-    backgroundColor: "#334155",
+    backgroundColor: "#2A3140",
     marginVertical: 4,
   },
   sectionHeader: {
@@ -444,16 +444,16 @@ const styles = StyleSheet.create({
   },
   vehicleChip: {
     flex: 1,
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 10,
     padding: 10,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
     gap: 4,
   },
   vehicleChipActive: {
-    borderColor: "#F59E0B",
+    borderColor: "#E4B15A",
     backgroundColor: "#1C2A1A",
   },
   vehicleChipEmoji: {
@@ -461,24 +461,24 @@ const styles = StyleSheet.create({
   },
   vehicleChipLabel: {
     fontSize: 11,
-    color: "#64748B",
+    color: "#7E8796",
     fontWeight: "600",
   },
   vehicleChipLabelActive: {
-    color: "#F59E0B",
+    color: "#E4B15A",
   },
   card: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 14,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
     gap: 4,
   },
   cardSubLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: "#7E8796",
     marginBottom: 10,
   },
   settingRow: {
@@ -493,12 +493,12 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 15,
-    color: "#F8FAFC",
+    color: "#F4F0E6",
     fontWeight: "600",
   },
   settingSubLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: "#7E8796",
     lineHeight: 16,
   },
   settingRight: {
@@ -506,12 +506,12 @@ const styles = StyleSheet.create({
   },
   valueText: {
     fontSize: 14,
-    color: "#94A3B8",
+    color: "#9AA3B2",
     fontWeight: "600",
   },
   rowDivider: {
     height: 1,
-    backgroundColor: "#334155",
+    backgroundColor: "#2A3140",
     marginVertical: 6,
   },
   optionRow: {
@@ -520,31 +520,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionChip: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#090B10",
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1.5,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
   },
   optionChipActive: {
-    borderColor: "#F59E0B",
+    borderColor: "#E4B15A",
     backgroundColor: "#1C2A1A",
   },
   optionChipText: {
     fontSize: 13,
-    color: "#94A3B8",
+    color: "#9AA3B2",
     fontWeight: "600",
   },
   optionChipTextActive: {
-    color: "#F59E0B",
+    color: "#E4B15A",
   },
   safetyNote: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 8,
     marginTop: 12,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#090B10",
     borderRadius: 8,
     padding: 10,
   },
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   },
   safetyNoteText: {
     fontSize: 12,
-    color: "#64748B",
+    color: "#7E8796",
     flex: 1,
     lineHeight: 17,
   },

@@ -23,7 +23,7 @@ const HTML = `<!DOCTYPE html>
     attribution: '&copy; OpenStreetMap'
   }).addTo(map);
   const you = L.circleMarker([-25.6, 134.3], {
-    radius: 9, color: '#F59E0B', weight: 3, fillColor: '#F8FAFC', fillOpacity: 1
+    radius: 9, color: '#E4B15A', weight: 3, fillColor: '#F4F0E6', fillOpacity: 1
   }).addTo(map);
   let layer = L.layerGroup().addTo(map);
   let followed = false;
@@ -31,7 +31,7 @@ const HTML = `<!DOCTYPE html>
     if (!data || typeof data.lat !== 'number') return;
     const ll = [data.lat, data.lng];
     you.setLatLng(ll);
-  you.setStyle && you.setStyle({ color: data.paint || '#F59E0B' });
+  you.setStyle && you.setStyle({ color: data.paint || '#E4B15A' });
   if (!followed) { map.setView(ll, 15); followed = true; }
     layer.clearLayers();
     (data.hazards || []).forEach(function (h) {
@@ -121,7 +121,7 @@ export function LiveMap({
         name: d.displayName,
       })),
       cameras: cameras ?? [],
-      paint: paint ?? "#F59E0B",
+      paint: paint ?? "#E4B15A",
     });
   }, [latitude, longitude, hazards, drivers, cameras, paint]);
 

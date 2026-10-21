@@ -96,7 +96,7 @@ export default function OnboardingScreen() {
               value={name}
               onChangeText={(t) => { setName(t); setError(""); }}
               placeholder="e.g. DustDevil, RoadRunner..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#7E8796"
               maxLength={20}
               autoCapitalize="words"
               returnKeyType="done"
@@ -156,7 +156,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#090B10",
   },
   flex: { flex: 1 },
   scroll: {
@@ -173,12 +173,12 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 22,
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: "#F59E0B",
+    borderColor: "#E4B15A",
   },
   logoEmoji: {
     fontSize: 44,
@@ -186,18 +186,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#F8FAFC",
+    color: "#F4F0E6",
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: "#F59E0B",
+    color: "#E4B15A",
     marginTop: 4,
     fontStyle: "italic",
     letterSpacing: 0.3,
   },
   features: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -225,23 +225,23 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: "#F4F0E6",
     marginBottom: 4,
   },
   labelHint: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: "#9AA3B2",
     marginBottom: 10,
   },
   input: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#F8FAFC",
+    color: "#F4F0E6",
     borderWidth: 1.5,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
   },
   error: {
     color: "#EF4444",
@@ -255,15 +255,15 @@ const styles = StyleSheet.create({
   },
   vehicleCard: {
     width: "47%",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 12,
     padding: 14,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
   },
   vehicleCardActive: {
-    borderColor: "#F59E0B",
+    borderColor: "#E4B15A",
     backgroundColor: "#1C2A1A",
   },
   vehicleEmoji: {
@@ -273,19 +273,19 @@ const styles = StyleSheet.create({
   vehicleLabel: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#94A3B8",
+    color: "#9AA3B2",
     marginBottom: 2,
   },
   vehicleLabelActive: {
-    color: "#F59E0B",
+    color: "#E4B15A",
   },
   vehicleDesc: {
     fontSize: 11,
-    color: "#64748B",
+    color: "#7E8796",
     textAlign: "center",
   },
   ctaButton: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#E4B15A",
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#090B10",
     letterSpacing: 0.3,
   },
   disclaimer: {

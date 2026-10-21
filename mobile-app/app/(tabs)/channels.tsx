@@ -222,7 +222,7 @@ export default function ChannelsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#090B10",
   },
   header: {
     flexDirection: "row",
@@ -231,20 +231,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: "#12151C",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#F8FAFC",
+    color: "#F4F0E6",
   },
   headerSub: {
     fontSize: 12,
-    color: "#64748B",
+    color: "#7E8796",
     marginTop: 2,
   },
   addBtn: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#E4B15A",
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   addBtnText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#090B10",
   },
   list: {
     padding: 16,
@@ -268,15 +268,15 @@ const styles = StyleSheet.create({
   },
   channelCard: {
     flexDirection: "row",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
     marginBottom: 10,
   },
   channelCardActive: {
-    borderColor: "#F59E0B",
+    borderColor: "#E4B15A",
     backgroundColor: "#1C2A1A",
   },
   channelCardAccent: {
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   channelCardName: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: "#F4F0E6",
   },
   channelCardMeta: {
     flexDirection: "row",
@@ -317,10 +317,10 @@ const styles = StyleSheet.create({
   },
   channelCardRadius: {
     fontSize: 11,
-    color: "#64748B",
+    color: "#7E8796",
   },
   activeBadge: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#E4B15A",
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -328,12 +328,12 @@ const styles = StyleSheet.create({
   activeBadgeText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#090B10",
     letterSpacing: 0.5,
   },
   channelCardDesc: {
     fontSize: 13,
-    color: "#94A3B8",
+    color: "#9AA3B2",
     lineHeight: 18,
   },
   channelCardFooter: {
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   channelCardMembers: {
     fontSize: 12,
-    color: "#64748B",
+    color: "#7E8796",
   },
   joinBtn: {
     backgroundColor: "#1D4ED8",
@@ -358,15 +358,15 @@ const styles = StyleSheet.create({
   joinBtnText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: "#F4F0E6",
   },
   leaveBtnText: {
-    color: "#94A3B8",
+    color: "#9AA3B2",
   },
   // ── Modal ──
   modalContainer: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#090B10",
   },
   modalInner: {
     flex: 1,
@@ -378,16 +378,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: "#12151C",
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#F8FAFC",
+    color: "#F4F0E6",
   },
   modalClose: {
     fontSize: 18,
-    color: "#64748B",
+    color: "#7E8796",
     padding: 4,
   },
   modalBody: {
@@ -402,14 +402,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   fieldInput: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: "#F8FAFC",
+    color: "#F4F0E6",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
   },
   fieldInputMulti: {
     minHeight: 80,
@@ -427,27 +427,27 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   radiusChip: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#12151C",
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1.5,
-    borderColor: "#334155",
+    borderColor: "#2A3140",
   },
   radiusChipActive: {
-    borderColor: "#F59E0B",
+    borderColor: "#E4B15A",
     backgroundColor: "#1C2A1A",
   },
   radiusChipText: {
     fontSize: 13,
-    color: "#94A3B8",
+    color: "#9AA3B2",
     fontWeight: "600",
   },
   radiusChipTextActive: {
-    color: "#F59E0B",
+    color: "#E4B15A",
   },
   createBtn: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#E4B15A",
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: "center",
@@ -456,6 +456,6 @@ const styles = StyleSheet.create({
   createBtnText: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#090B10",
   },
 });
