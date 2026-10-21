@@ -31,6 +31,6 @@ npx eas-cli build -p android --profile production
 - Friend requests by handle
 - Profile photo and a car garage (paint, wheels, accessories)
 - 347 signposted NSW fixed and red-light cameras from Transport for NSW open data, with an ahead warning
-- Community camera and traffic-stop pins (traffic-stop pins expire after 45 minutes)
+- Community camera, traffic-stop, and driver-behaviour pins. Driver notes cannot include a number plate. Traffic-stop pins expire after 45 minutes, driver pins after 30.
 
 No account. No subscription. No background location. No police or speed-camera alerts.

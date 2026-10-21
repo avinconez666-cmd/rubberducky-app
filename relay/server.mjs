@@ -47,6 +47,14 @@ function socketFor(handle) {
   return null;
 }
 
+function looksLikePlate(text) {
+  if (/\b(rego|number\s*plate|licence\s*plate|license\s*plate)\b/i.test(text)) return true;
+  return String(text)
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .some((token) => token.length >= 5 && token.length <= 7 && /[A-Z]/.test(token) && /\d/.test(token));
+}
+
 function areFriends(a, b) {
   return friends.get(key(a))?.has(key(b)) ?? false;
 }
@@ -161,9 +169,13 @@ wss.on("connection", (ws) => {
         lng: Number(msg.lng),
         from: me.handle,
         at: Date.now(),
-        expiresAt: Date.now() + (msg.hazardType === "police" ? 45 : 60) * 60 * 1000,
+        expiresAt: Date.now() + (msg.hazardType === "driver" ? 30 : msg.hazardType === "police" ? 45 : 60) * 60 * 1000,
       };
       if (!Number.isFinite(packet.lat) || !Number.isFinite(packet.lng)) return;
+      if (packet.hazardType === "driver" && looksLikePlate(packet.description)) {
+        send(ws, { type: "error", error: "Driver reports cannot include a number plate" });
+        return;
+      }
       broadcast(packet, ws);
     }
   });

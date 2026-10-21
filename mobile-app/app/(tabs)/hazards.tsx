@@ -4,6 +4,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useApp } from "@/contexts/AppContext";
 import { useRadio } from "@/contexts/RadioContext";
 import { CAMERA_COUNT, CAMERA_SOURCE } from "@/lib/cameras";
+import { noteHasPlate } from "@/lib/plates";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import type { HazardType } from "@/contexts/AppContext";
@@ -17,6 +18,18 @@ const HAZARD_TYPES: { type: HazardType; label: string; emoji: string }[] = [
   { type: "weather", label: "Weather", emoji: "🌧️" },
   { type: "speed_camera", label: "Camera", emoji: "📷" },
   { type: "police", label: "Traffic stop", emoji: "🚔" },
+  { type: "driver", label: "Driver", emoji: "🚙" },
+];
+
+const DRIVER_BEHAVIOURS = [
+  "Dangerous driving",
+  "Erratic",
+  "Road rage",
+  "Wrong way",
+  "Unsecured load",
+  "Stopped in a lane",
+  "Tailgating",
+  "No lights",
 ];
 
 export default function HazardsScreen() {
@@ -25,6 +38,7 @@ export default function HazardsScreen() {
   const radio = useRadio();
   const [showModal, setShowModal] = useState(false);
   const [selectedType, setSelectedType] = useState<HazardType>("accident");
+  const [behaviour, setBehaviour] = useState(DRIVER_BEHAVIOURS[0]);
   const [description, setDescription] = useState("");
 
   const handleReport = () => {
@@ -32,13 +46,21 @@ export default function HazardsScreen() {
       Alert.alert("Location needed", "Turn on location so the pin is dropped where you actually are.");
       return;
     }
-    if (!description.trim()) {
-      Alert.alert("Add a note", "Say what other drivers should look for.");
+    if (selectedType === "driver" && !behaviour) {
+      Alert.alert("Pick a behaviour", "Say what the other driver is doing.");
       return;
     }
-    reportHazard(selectedType, description.trim(), userLocation.latitude, userLocation.longitude);
-    const id = `hazard-${Date.now()}`;
-    radio.publishHazard(selectedType, description.trim(), userLocation.latitude, userLocation.longitude, id);
+    if (!description.trim()) {
+      Alert.alert("Add a note", selectedType === "driver" ? "Colour and vehicle type is enough. No rego and no names." : "Say what other drivers should look for.");
+      return;
+    }
+    const note = selectedType === "driver" ? `${behaviour}. ${description.trim()}` : description.trim();
+    if (selectedType === "driver" && noteHasPlate(note)) {
+      Alert.alert("Leave the rego out", "Describe the vehicle and what it is doing. Do not put a number plate or a name.");
+      return;
+    }
+    reportHazard(selectedType, note, userLocation.latitude, userLocation.longitude);
+    radio.publishHazard(selectedType, note, userLocation.latitude, userLocation.longitude, `hazard-${Date.now()}`);
     setDescription("");
     setSelectedType("accident");
     setShowModal(false);
@@ -62,7 +84,7 @@ export default function HazardsScreen() {
           </View>
 
           <Text className="text-muted text-sm">
-            Pins stay on this phone for an hour. A traffic-stop pin lasts 45 minutes. {CAMERA_COUNT} signposted NSW cameras are already on the map. {CAMERA_SOURCE}
+            Pins stay on this phone for an hour. A driver report lasts 30 minutes and a traffic-stop pin lasts 45. Pull over before you type. {CAMERA_COUNT} signposted NSW cameras are already on the map. {CAMERA_SOURCE}
           </Text>
           {activeHazards.length === 0 ? (
             <View className="flex-1 items-center justify-center gap-2">
@@ -108,7 +130,8 @@ export default function HazardsScreen() {
       {/* Report Modal */}
       <Modal visible={showModal} transparent animationType="slide">
         <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-background rounded-t-2xl p-6 gap-4">
+          <View className="bg-background rounded-t-2xl p-6 gap-4 max-h-[85%]">
+            <ScrollView>
             <View className="flex-row items-center justify-between">
               <Text className="text-xl font-bold text-foreground">Report Hazard</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
@@ -143,11 +166,29 @@ export default function HazardsScreen() {
               </View>
             </View>
 
+            {selectedType === "driver" && (
+              <View className="gap-2 mt-3">
+                <Text className="text-foreground font-semibold">What are they doing?</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {DRIVER_BEHAVIOURS.map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      onPress={() => setBehaviour(item)}
+                      className={`py-2 px-3 rounded-full border ${behaviour === item ? "bg-primary border-primary" : "bg-surface border-border"}`}
+                    >
+                      <Text className={`text-xs font-semibold ${behaviour === item ? "text-background" : "text-foreground"}`}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text className="text-muted text-xs">Marks the spot, not the person. No number plates and no names. Call 000 if someone is in danger.</Text>
+              </View>
+            )}
+
             {/* Description */}
             <View className="gap-2">
               <Text className="text-foreground font-semibold">Description</Text>
               <TextInput
-                placeholder="e.g., Lane blocked, debris on road..."
+                placeholder={selectedType === "driver" ? "e.g. white ute, weaving" : "e.g., Lane blocked, debris on road..."}
                 placeholderTextColor={colors.muted}
                 value={description}
                 onChangeText={setDescription}
@@ -172,6 +213,7 @@ export default function HazardsScreen() {
                 <Text className="text-background font-semibold text-center">Report</Text>
               </TouchableOpacity>
             </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>

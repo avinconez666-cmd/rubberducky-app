@@ -70,6 +70,9 @@ const HAZARD_EMOJI: Record<string, string> = {
   animal: "🦘",
   roadworks: "🚧",
   weather: "🌧️",
+  speed_camera: "📷",
+  police: "🚔",
+  driver: "🚙",
 };
 
 const VEHICLE_EMOJI: Record<string, string> = {

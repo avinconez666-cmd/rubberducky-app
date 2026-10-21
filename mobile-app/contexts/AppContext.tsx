@@ -9,7 +9,7 @@ export type VehicleType = "car" | "truck" | "motorcycle" | "rv";
 export type ChannelType = "public" | "emergency" | "custom";
 
 // ─── Hazard Report ────────────────────────────────────────────────────────────
-export type HazardType = "accident" | "debris" | "breakdown" | "animal" | "roadworks" | "weather" | "speed_camera" | "police";
+export type HazardType = "accident" | "debris" | "breakdown" | "animal" | "roadworks" | "weather" | "speed_camera" | "police" | "driver";
 
 export interface HazardReport {
   id: string;
@@ -497,7 +497,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       description,
       reportedBy: user?.displayName ?? "Anonymous",
       reportedAt: Date.now(),
-      expiresAt: Date.now() + (type === "police" ? 45 : 60) * 60 * 1000,
+      expiresAt: Date.now() + (type === "driver" ? 30 : type === "police" ? 45 : 60) * 60 * 1000,
       upvotes: 1,
     };
     setHazards((prev) => {

@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import * as FileSystem from "expo-file-system/legacy";
 import { useApp, type HazardType, type Message } from "@/contexts/AppContext";
+import { noteHasPlate } from "@/lib/plates";
 
 interface RadioValue {
   status: "off" | "connecting" | "live" | "error";
@@ -179,12 +180,14 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         }
         if (msg.type === "hazard") {
           const hazardType = String(msg.hazardType || "debris") as HazardType;
+          const description = String(msg.description || "");
+          if (hazardType === "driver" && noteHasPlate(description)) return;
           ingestHazard({
             id: String(msg.id),
             type: hazardType,
             latitude: Number(msg.lat),
             longitude: Number(msg.lng),
-            description: String(msg.description || ""),
+            description,
             reportedBy: String(msg.from || "Driver"),
             reportedAt: Number(msg.at) || Date.now(),
             expiresAt: Number(msg.expiresAt) || Date.now() + 3600000,

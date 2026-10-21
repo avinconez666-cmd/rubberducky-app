@@ -33,7 +33,7 @@ export function RoadAlerts() {
     if (!userLocation) return;
     const now = Date.now();
     for (const hazard of hazards) {
-      if (hazard.type !== "police" && hazard.type !== "speed_camera") continue;
+      if (hazard.type !== "police" && hazard.type !== "speed_camera" && hazard.type !== "driver") continue;
       if (hazard.reportedBy === user?.displayName) continue;
       if (policeWarned.current.has(hazard.id)) continue;
       const meters = Math.hypot(
@@ -44,11 +44,13 @@ export function RoadAlerts() {
       policeWarned.current.add(hazard.id);
       if (hazard.type === "police") {
         pushRoadAlert("Reported traffic stop", `${hazard.reportedBy}: ${hazard.description}. Ease off so nobody brakes late.`, 12000);
+      } else if (hazard.type === "driver") {
+        pushRoadAlert("Driver reported ahead", `${hazard.description}. Give them room. This is a driver report, not a person.`, 12000);
       } else if (!hazard.id.startsWith("nsw-")) {
         pushRoadAlert("Reported camera", `${hazard.description || "A driver marked a camera here."} Check the signs.`, 12000);
       }
     }
-  }, [hazards, userLocation, pushRoadAlert]);
+  }, [hazards, userLocation, pushRoadAlert, user?.displayName]);
 
   return null;
 }
