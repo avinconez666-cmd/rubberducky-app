@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { formatDistance, haversineMeters, insideHomeBubble } from "@/lib/geo";
 import { GPS_OPTIONS, normaliseGpsAccuracy } from "@/lib/gps";
 import { setSfxEnabled, sfxEnabled } from "@/lib/sfx";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -22,6 +23,14 @@ const VEHICLES: { type: VehicleType; emoji: string; label: string }[] = [
   { type: "truck", emoji: "🚛", label: "Truck" },
   { type: "motorcycle", emoji: "🏍️", label: "Moto" },
   { type: "rv", emoji: "🚐", label: "RV" },
+];
+
+const HOME_HIDE = [
+  { label: "Off", value: 0 },
+  { label: "200 m", value: 200 },
+  { label: "500 m", value: 500 },
+  { label: "1 km", value: 1000 },
+  { label: "2 km", value: 2000 },
 ];
 
 const RADIUS_OPTIONS = [
@@ -177,7 +186,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <SettingRow
             label="Show on Map"
-            sublabel="While the relay is connected and the app is open, other drivers on that relay can see your position. It stops when you leave or switch this off."
+            sublabel="While the relay is connected and the app is open, other drivers can see you. This switches itself off inside the home distance below, and when you leave the app."
             right={
               <Switch
                 value={user.isVisible}
@@ -190,6 +199,50 @@ export default function SettingsScreen() {
               />
             }
           />
+          <View style={styles.rowDivider} />
+          <Text style={styles.settingLabel}>Hide near home</Text>
+          <Text style={styles.cardSubLabel}>
+            The home point stays on this phone. Other drivers stop seeing you when you are inside the distance.
+          </Text>
+          <View style={styles.optionRow}>
+            {HOME_HIDE.map((opt) => {
+              const on = (user.homeHideMeters ?? 500) === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.optionChip, on && styles.optionChipActive]}
+                  onPress={() => updateUser({ homeHideMeters: opt.value })}
+                >
+                  <Text style={[styles.optionChipText, on && styles.optionChipTextActive]}>{opt.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text style={[styles.cardSubLabel, { marginTop: 8 }]}>
+            {user.homeLat == null || user.homeLng == null
+              ? "No home point yet."
+              : userLocation
+                ? insideHomeBubble(userLocation, user.homeLat, user.homeLng, user.homeHideMeters)
+                  ? `Hidden. You are ${formatDistance(haversineMeters(userLocation.latitude, userLocation.longitude, user.homeLat, user.homeLng))} from the home point.`
+                  : `${formatDistance(haversineMeters(userLocation.latitude, userLocation.longitude, user.homeLat, user.homeLng))} from home.`
+                : "Home point saved. Waiting for GPS."}
+          </Text>
+          <View style={[styles.optionRow, { marginTop: 8 }]}>
+            <TouchableOpacity
+              style={styles.optionChip}
+              onPress={() => {
+                if (!userLocation) return;
+                updateUser({ homeLat: userLocation.latitude, homeLng: userLocation.longitude });
+              }}
+            >
+              <Text style={styles.optionChipText}>{userLocation ? "Set home to here" : "Waiting for GPS"}</Text>
+            </TouchableOpacity>
+            {user.homeLat != null && (
+              <TouchableOpacity style={styles.optionChip} onPress={() => updateUser({ homeLat: null, homeLng: null })}>
+                <Text style={styles.optionChipText}>Clear home</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <SectionHeader title="Sound" />

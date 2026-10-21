@@ -14,3 +14,14 @@ export function formatDistance(meters: number) {
   if (meters < 1000) return `${Math.round(meters)} m`;
   return `${(meters / 1000).toFixed(1)} km`;
 }
+
+/** True when this fix is inside the on-device home bubble. Home coordinates never leave the phone. */
+export function insideHomeBubble(
+  here: { latitude: number; longitude: number } | null | undefined,
+  homeLat: number | null | undefined,
+  homeLng: number | null | undefined,
+  meters: number | null | undefined,
+) {
+  if (!here || homeLat == null || homeLng == null || meters == null || meters <= 0) return false;
+  return haversineMeters(here.latitude, here.longitude, homeLat, homeLng) <= meters;
+}

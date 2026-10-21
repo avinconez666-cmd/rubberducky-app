@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import * as FileSystem from "expo-file-system/legacy";
 import { useRadio } from "@/contexts/RadioContext";
 import { nearestCameras } from "@/lib/cameras";
-import { haversineMeters } from "@/lib/geo";
+import { haversineMeters, insideHomeBubble } from "@/lib/geo";
 import {
   View,
   Text,
@@ -313,7 +313,9 @@ export default function MapScreen() {
             </View>
             <View style={styles.statusPill}>
               <Text style={styles.statusText} numberOfLines={1}>
-                {currentSpeed} km/h{userLocation?.accuracyM != null ? ` ±${Math.round(userLocation.accuracyM)}m` : ""}
+                {insideHomeBubble(userLocation, user?.homeLat, user?.homeLng, user?.homeHideMeters)
+                  ? "Hidden near home"
+                  : `${currentSpeed} km/h${userLocation?.accuracyM != null ? ` ±${Math.round(userLocation.accuracyM)}m` : ""}`}
               </Text>
             </View>
           </View>

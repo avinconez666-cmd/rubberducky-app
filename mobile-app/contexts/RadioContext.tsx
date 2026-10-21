@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import * as FileSystem from "expo-file-system/legacy";
 import { useApp, type HazardType, type Message, type NearbyDriver, type VehicleType } from "@/contexts/AppContext";
 import { noteHasPlate } from "@/lib/plates";
+import { insideHomeBubble } from "@/lib/geo";
 
 interface RadioValue {
   status: "off" | "connecting" | "live" | "error";
@@ -254,7 +255,8 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     const pushLoc = () => {
       const me = userRef.current;
       const loc = locRef.current;
-      if (!me?.isVisible || !loc) {
+      const nearHome = me ? insideHomeBubble(loc, me.homeLat, me.homeLng, me.homeHideMeters) : false;
+      if (!me?.isVisible || !loc || nearHome) {
         send({ type: "loc", visible: false });
         return;
       }

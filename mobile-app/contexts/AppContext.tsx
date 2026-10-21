@@ -109,6 +109,9 @@ export interface UserProfile {
   car: CarStyle;
   gpsAccuracy: GpsAccuracy;
   stats: DriverStats;
+  homeLat: number | null;
+  homeLng: number | null;
+  homeHideMeters: number;
 }
 
 export interface RoadAlert {
@@ -280,6 +283,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             car: normaliseCar(parsed.car),
             gpsAccuracy: normaliseGpsAccuracy(parsed.gpsAccuracy),
             stats: normaliseStats(parsed.stats),
+            homeLat: typeof parsed.homeLat === "number" ? parsed.homeLat : null,
+            homeLng: typeof parsed.homeLng === "number" ? parsed.homeLng : null,
+            homeHideMeters: typeof parsed.homeHideMeters === "number" ? parsed.homeHideMeters : 500,
           };
           setUserState(withCar);
           setIsOnboarded(true);
@@ -377,6 +383,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       car: { ...DEFAULT_CAR, body: vehicle === "truck" ? "truck" : vehicle === "rv" ? "van" : vehicle === "motorcycle" ? "bike" : "sedan" },
       gpsAccuracy: "standard",
       stats: { ...EMPTY_STATS },
+      homeLat: null,
+      homeLng: null,
+      homeHideMeters: 500,
     };
     setUser(newUser);
     setIsOnboarded(true);
