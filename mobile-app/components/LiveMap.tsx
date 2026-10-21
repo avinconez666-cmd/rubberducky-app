@@ -11,13 +11,15 @@ const HTML = `<!DOCTYPE html>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   html, body, #map { margin: 0; height: 100%; background: #0D1B2A; }
-  .leaflet-control-attribution { font-size: 10px; }
+  .leaflet-control-attribution { font-size: 9px; background: rgba(9,11,16,0.55); color: #9AA3B2; }
+  .leaflet-control-attribution a { color: #C5CDD6; }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <script>
-  const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-25.6, 134.3], 4);
+  const map = L.map('map', { zoomControl: false, attributionControl: true }).setView([-25.6, 134.3], 4);
+  L.control.zoom({ position: 'topright' }).addTo(map);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap'
