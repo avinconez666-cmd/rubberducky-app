@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ScreenContainer } from "@/components/screen-container";
 import { CartoonVehicle } from "@/components/CartoonVehicle";
@@ -23,6 +23,8 @@ export default function GarageScreen() {
   const { user, updateUser } = useApp();
   const radio = useRadio();
   const [busy, setBusy] = useState(false);
+  const { width } = useWindowDimensions();
+  const artWidth = Math.max(220, Math.min(340, width - 32));
   const stage = useRef(new Animated.Value(1)).current;
   const signature = user ? `${user.car.body}|${user.car.paint}|${user.car.wheel}|${user.car.accessories.join(",")}` : "";
   useEffect(() => {
@@ -79,27 +81,11 @@ export default function GarageScreen() {
     <ScreenContainer className="px-4">
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.kicker}>GARAGE</Text>
-        <Text style={styles.title}>{user.displayName}</Text>
-        <Text style={styles.lead}>Paint, wheels, and kit. Locked pieces open when you use the radio, not when you pay.</Text>
-
-        <Text style={styles.section}>Garage packages</Text>
-        {PACKAGE_TIERS.map((tier) => (
-          <View key={tier.id} style={styles.packageCard}>
-            <View style={styles.packageTopline}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.packageName}>{tier.name}</Text>
-                <Text style={styles.packageTagline}>{tier.tagline}</Text>
-              </View>
-              <Text style={styles.packagePrice}>
-                {tier.billing === "free" ? "Free" : tier.billing === "monthly" ? `$${(tier.priceCents / 100).toFixed(2)}/mo` : `$${(tier.priceCents / 100).toFixed(2)}`}
-              </Text>
-            </View>
-            <Text style={styles.packageUnlocks}>Unlocks {tier.unlocks.length} garage items</Text>
-          </View>
-        ))}
+        <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>{user.displayName}</Text>
+        <Text style={styles.lead}>The vehicle below is the one on your profile. Packages further down are a preview. Nothing on this screen charges you.</Text>
 
         <Animated.View style={[styles.hero, { transform: [{ scale: stage }] }]}>
-          <CartoonVehicle car={car} width={340} />
+          <CartoonVehicle car={car} width={artWidth} />
           <Text style={styles.heroMeta}>
             {BODIES.find((item) => item.id === car.body)?.label} · {car.accessories.length} fitted
           </Text>
@@ -127,7 +113,7 @@ export default function GarageScreen() {
         </View>
 
         <Text style={styles.section}>Milestones</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mileRow}>
+        <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mileRow}>
           {MILESTONES.map((item) => {
             const done = milestoneMet(item.id, stats);
             return (
@@ -202,6 +188,24 @@ export default function GarageScreen() {
             </TouchableOpacity>
           );
         })}
+
+        <Text style={styles.section}>Garage packages</Text>
+        <Text style={styles.lead}>A preview of later collections. These cards do not take payment.</Text>
+        {PACKAGE_TIERS.map((tier) => {
+          const price = tier.billing === "free" ? "Free" : tier.billing === "monthly" ? `$${(tier.priceCents / 100).toFixed(2)}/mo` : `$${(tier.priceCents / 100).toFixed(2)}`;
+          return (
+            <View key={tier.id} style={styles.packageCard}>
+              <View style={styles.packageTopline}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.packageName}>{tier.name}</Text>
+                  <Text style={styles.packageTagline}>{tier.tagline}</Text>
+                </View>
+                <Text style={styles.packagePrice} numberOfLines={1}>{price}</Text>
+              </View>
+              <Text style={styles.packageUnlocks}>Lists {tier.unlocks.length} items. Not sold in the app yet.</Text>
+            </View>
+          );
+        })}
       </ScrollView>
     </ScreenContainer>
   );
@@ -216,9 +220,9 @@ const styles = StyleSheet.create({
   packageTopline: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   packageName: { color: "#F4F0E6", fontWeight: "700", fontSize: 16 },
   packageTagline: { color: "#9AA3B2", fontSize: 12, lineHeight: 17, marginTop: 4 },
-  packagePrice: { color: "#E4B15A", fontWeight: "800", fontSize: 15 },
-  packageUnlocks: { color: "#32E6D3", fontSize: 12, fontWeight: "700", marginTop: 10 },
-  hero: { marginTop: 16, backgroundColor: "#12151C", borderRadius: 28, borderWidth: 1, borderColor: "#2A3140", alignItems: "center", paddingTop: 12, paddingBottom: 8 },
+  packagePrice: { flexShrink: 0, color: "#E4B15A", fontWeight: "800", fontSize: 15 },
+  packageUnlocks: { color: "#9AA3B2", fontSize: 12, fontWeight: "600", marginTop: 10 },
+  hero: { marginTop: 16, backgroundColor: "#12151C", borderRadius: 28, borderWidth: 1, borderColor: "#2A3140", alignItems: "center", paddingTop: 8, paddingBottom: 4, overflow: "hidden" },
   heroMeta: { color: "#9AA3B2", fontWeight: "600", marginBottom: 8 },
   profile: { marginTop: 14, flexDirection: "row", gap: 14, alignItems: "center", backgroundColor: "#12151C", borderRadius: 20, padding: 14, borderWidth: 1, borderColor: "#2A3140" },
   photo: { width: 64, height: 64, borderRadius: 32 },

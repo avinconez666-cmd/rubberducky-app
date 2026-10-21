@@ -18,7 +18,7 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useAudioPlayer, useAudioRecorder, RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync } from "expo-audio";
 import { useApp, Message } from "@/contexts/AppContext";
@@ -136,13 +136,12 @@ export default function MapScreen() {
     isConnected,
   } = useApp();
   const radio = useRadio();
-
-  const insets = useSafeAreaInsets();
   const recorder = useAudioRecorder(RecordingPresets.LOW_QUALITY);
   const [textInput, setTextInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [showChannelSheet, setShowChannelSheet] = useState(false);
+  const [barHeight, setBarHeight] = useState(88);
   const [reportMode, setReportMode] = useState<"hazard" | "mobile" | null>(null);
   const recordingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const secondsRef = useRef(0);
@@ -291,7 +290,7 @@ export default function MapScreen() {
       />
 
       {/* Top status bar */}
-      <SafeAreaView edges={["top"]} style={styles.topBar}>
+      <SafeAreaView edges={["top"]} style={styles.topBar} onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}>
         <View style={styles.topBarInner}>
           <TouchableOpacity
             style={[styles.channelPill, { borderColor: channelColor }]}
@@ -299,43 +298,43 @@ export default function MapScreen() {
             activeOpacity={0.8}
           >
             <View style={[styles.channelDotSmall, { backgroundColor: channelColor }]} />
-            <Text style={styles.channelPillText}>{activeChannel?.name ?? "Public Nearby"}</Text>
+            <Text style={styles.channelPillText} numberOfLines={1}>{activeChannel?.name ?? "Public Nearby"}</Text>
             <Text style={styles.channelPillChevron}>▾</Text>
           </TouchableOpacity>
           <View style={styles.statusPills}>
             <View style={[styles.statusPill, { backgroundColor: isConnected ? "#14532D" : practiceMode ? "#3A2A14" : "#12151C" }]}>
               <View style={[styles.statusDot, { backgroundColor: isConnected ? "#22C55E" : practiceMode ? "#E4B15A" : "#9AA3B2" }]} />
-              <Text style={styles.statusText}>{isConnected ? "Live room" : practiceMode ? "Practice" : "Relay off"}</Text>
+              <Text style={styles.statusText} numberOfLines={1}>{isConnected ? "Live room" : practiceMode ? "Practice" : "Relay off"}</Text>
             </View>
             <View style={styles.statusPill}>
-              <Text style={styles.statusText}>
-                {currentSpeed} km/h{userLocation?.accuracyM != null ? ` · ±${Math.round(userLocation.accuracyM)}m` : ""}
+              <Text style={styles.statusText} numberOfLines={1}>
+                {currentSpeed} km/h{userLocation?.accuracyM != null ? ` · ±${Math.round(userLocation.accuracyM)} m` : ""}
               </Text>
             </View>
           </View>
         </View>
       </SafeAreaView>
 
-      {alertLive && (
-        <SlideBanner top={80} color="#3A2A14">
-          <Text style={styles.safetyIcon}>⚠️</Text>
-          <Text style={styles.safetyText}>{alertLive.title} — {alertLive.body}</Text>
-        </SlideBanner>
-      )}
-
-      {radio.onAir && (
-        <SlideBanner top={alertLive ? 132 : 80} color="#6B2420">
-          <Text style={styles.safetyIcon}>🎙️</Text>
-          <Text style={styles.safetyText}>{radio.onAir} is on the mic</Text>
-        </SlideBanner>
-      )}
-
-      {isSafetyMode && (
-        <SlideBanner top={80} color="#3A2A14">
-          <Text style={styles.safetyIcon}>🛡️</Text>
-          <Text style={styles.safetyText}>Safety Mode — {currentSpeed} km/h · Text disabled</Text>
-        </SlideBanner>
-      )}
+      <View style={[styles.bannerStack, { top: barHeight + 8 }]} pointerEvents="none">
+        {isSafetyMode && (
+          <SlideBanner color="#3A2A14">
+            <Text style={styles.safetyIcon}>🛡️</Text>
+            <Text style={styles.safetyText}>Safety Mode — {currentSpeed} km/h · Text disabled</Text>
+          </SlideBanner>
+        )}
+        {alertLive && (
+          <SlideBanner color="#3A2A14">
+            <Text style={styles.safetyIcon}>⚠️</Text>
+            <Text style={styles.safetyText}>{alertLive.title} — {alertLive.body}</Text>
+          </SlideBanner>
+        )}
+        {radio.onAir && (
+          <SlideBanner color="#6B2420">
+            <Text style={styles.safetyIcon}>🎙️</Text>
+            <Text style={styles.safetyText}>{radio.onAir} is on the mic</Text>
+          </SlideBanner>
+        )}
+      </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -343,19 +342,19 @@ export default function MapScreen() {
       >
         <View style={styles.quickRow}>
           <TouchableOpacity style={[styles.quickBtn, styles.quickBtnHelp]} onPress={() => router.push("/help")}>
-            <Text style={styles.quickText}>Help</Text>
+            <Text style={styles.quickText} numberOfLines={1}>Help</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickBtn}
             onPress={() => (isSafetyMode ? Alert.alert("Pull over", "Stop the vehicle before you report a hazard.") : setReportMode("hazard"))}
           >
-            <Text style={styles.quickText}>Road hazard</Text>
+            <Text style={styles.quickText} numberOfLines={1}>Hazard</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickBtn}
             onPress={() => (isSafetyMode ? Alert.alert("Pull over", "Stop the vehicle before you pin a camera.") : setReportMode("mobile"))}
           >
-            <Text style={styles.quickText}>Mobile camera</Text>
+            <Text style={styles.quickText} numberOfLines={1}>Camera</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.messageFeed}>
@@ -377,7 +376,7 @@ export default function MapScreen() {
             }
           />
         </View>
-        <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={styles.inputRow}>
           <View style={styles.textInputWrapper}>
             <TextInput
               style={[styles.textInput, isSafetyMode && styles.textInputDisabled]}
@@ -400,7 +399,7 @@ export default function MapScreen() {
             {isRecording && (
               <Animated.View
                 pointerEvents="none"
-                style={[styles.pttRing, { opacity: pulse, transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }] }]}
+                style={[styles.pttRing, { opacity: pulse, transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] }) }] }]}
               />
             )}
             <Pressable
@@ -434,7 +433,7 @@ export default function MapScreen() {
   );
 }
 
-function SlideBanner({ top, color, children }: { top: number; color: string; children: React.ReactNode }) {
+function SlideBanner({ color, children }: { color: string; children: React.ReactNode }) {
   const y = useRef(new Animated.Value(-16)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -444,7 +443,7 @@ function SlideBanner({ top, color, children }: { top: number; color: string; chi
     ]).start();
   }, [opacity, y]);
   return (
-    <Animated.View style={[styles.safetyBanner, { top, backgroundColor: color, opacity, transform: [{ translateY: y }] }]}>
+    <Animated.View style={[styles.safetyBanner, { backgroundColor: color, opacity, transform: [{ translateY: y }] }]}>
       {children}
     </Animated.View>
   );
@@ -465,24 +464,25 @@ const styles = StyleSheet.create({
   driverLabel: { backgroundColor: "rgba(9,11,16,0.85)", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, marginTop: 3, maxWidth: 80 },
   driverName: { fontSize: 10, color: "#CBD5E1", fontWeight: "600", textAlign: "center" },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 },
-  topBarInner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8, backgroundColor: "rgba(9,11,16,0.88)", borderBottomWidth: 1, borderBottomColor: "#12151C" },
-  channelPill: { flexDirection: "row", alignItems: "center", backgroundColor: "#12151C", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1.5, gap: 6 },
+  topBarInner: { gap: 6, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: "rgba(9,11,16,0.92)", borderBottomWidth: 1, borderBottomColor: "#12151C" },
+  channelPill: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", maxWidth: "100%", backgroundColor: "#12151C", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1.5, gap: 6 },
   channelDotSmall: { width: 8, height: 8, borderRadius: 4 },
-  channelPillText: { fontSize: 13, fontWeight: "700", color: "#F4F0E6" },
+  channelPillText: { flexShrink: 1, fontSize: 13, fontWeight: "700", color: "#F4F0E6" },
   channelPillChevron: { fontSize: 12, color: "#9AA3B2" },
-  statusPills: { flexDirection: "row", gap: 6 },
-  statusPill: { flexDirection: "row", alignItems: "center", backgroundColor: "#12151C", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
+  statusPills: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  statusPill: { flexDirection: "row", alignItems: "center", backgroundColor: "#12151C", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, gap: 4, maxWidth: "100%" },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 11, color: "#CBD5E1", fontWeight: "600" },
-  safetyBanner: { position: "absolute", top: 80, left: 16, right: 16, zIndex: 10, backgroundColor: "#3A2A14", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: "#E4B15A" },
+  statusText: { flexShrink: 1, fontSize: 11, color: "#CBD5E1", fontWeight: "600" },
+  bannerStack: { position: "absolute", left: 12, right: 12, zIndex: 10, gap: 8 },
+  safetyBanner: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: "#E4B15A" },
   safetyIcon: { fontSize: 16 },
   safetyText: { fontSize: 13, color: "#FDE68A", fontWeight: "700", flex: 1 },
   bottomOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10 },
   quickRow: { flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingBottom: 6 },
-  quickBtn: { backgroundColor: "rgba(9,11,16,0.92)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: "#2A3140" },
+  quickBtn: { flex: 1, alignItems: "center", backgroundColor: "rgba(9,11,16,0.92)", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 8, borderWidth: 1, borderColor: "#2A3140" },
   quickBtnHelp: { backgroundColor: "#3A2A14", borderColor: "#E4B15A" },
   quickText: { color: "#F4F0E6", fontWeight: "800", fontSize: 12 },
-  messageFeed: { maxHeight: SCREEN_H * 0.28, backgroundColor: "rgba(9,11,16,0.82)", borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingTop: 8 },
+  messageFeed: { maxHeight: Math.min(168, SCREEN_H * 0.22), backgroundColor: "rgba(9,11,16,0.82)", borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingTop: 8 },
   messageList: { paddingHorizontal: 12, paddingBottom: 4 },
   emptyMsg: { color: "#475569", fontSize: 13, textAlign: "center", paddingVertical: 16, lineHeight: 20 },
   msgBubble: { backgroundColor: "#12151C", borderRadius: 10, padding: 8, marginBottom: 6, maxWidth: "85%", alignSelf: "flex-start" },
@@ -493,8 +493,8 @@ const styles = StyleSheet.create({
   msgTime: { fontSize: 10, color: "#475569", marginTop: 3, alignSelf: "flex-end" },
   voiceMsg: { flexDirection: "row", alignItems: "center", gap: 6 },
   voiceIcon: { fontSize: 16 },
-  voiceLabel: { fontSize: 13, color: "#9AA3B2", fontStyle: "italic" },
-  inputRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingTop: 10, gap: 10, backgroundColor: "rgba(9,11,16,0.95)", borderTopWidth: 1, borderTopColor: "#12151C" },
+  voiceLabel: { flexShrink: 1, fontSize: 13, color: "#9AA3B2", fontStyle: "italic" },
+  inputRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10, gap: 10, backgroundColor: "rgba(9,11,16,0.95)", borderTopWidth: 1, borderTopColor: "#12151C" },
   textInputWrapper: { flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: "#12151C", borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: "#2A3140" },
   textInput: { flex: 1, fontSize: 14, color: "#F4F0E6", maxHeight: 80 },
   textInputDisabled: { opacity: 0.4 },

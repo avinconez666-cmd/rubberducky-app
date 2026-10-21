@@ -9,7 +9,7 @@ export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 60 + bottomPadding;
+  const tabBarHeight = 52 + bottomPadding;
 
   return (
     <Tabs
@@ -19,18 +19,20 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          paddingTop: 6,
+          paddingTop: 4,
           paddingBottom: bottomPadding,
           height: tabBarHeight,
           backgroundColor: "#090B10",
           borderTopColor: "#2A3140",
           borderTopWidth: 1,
         },
+        tabBarItemStyle: { paddingHorizontal: 0 },
+        tabBarAllowFontScaling: false,
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: "600",
-          letterSpacing: 0.2,
-          marginTop: 2,
+          letterSpacing: 0,
+          marginTop: 1,
         },
       }}
     >
@@ -38,49 +40,54 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Map",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="map.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={20} name="map.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="hazards"
         options={{
-          title: "Hazards",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="exclamationmark.triangle.fill" color={color} />,
+          title: "Pins",
+          tabBarAccessibilityLabel: "Hazards",
+          tabBarIcon: ({ color }) => <IconSymbol size={20} name="exclamationmark.triangle.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="navigation"
         options={{
           title: "Nav",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="location.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={20} name="location.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="friends"
         options={{
-          title: "Friends",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.3.fill" color={color} />,
+          title: "Crew",
+          tabBarAccessibilityLabel: "Friends",
+          tabBarIcon: ({ color }) => <IconSymbol size={20} name="person.3.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="subscription"
         options={{
-          title: "Garage",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="car.fill" color={color} />,
+          title: "Car",
+          tabBarAccessibilityLabel: "Garage",
+          tabBarIcon: ({ color }) => <IconSymbol size={20} name="car.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="channels"
         options={{
-          title: "Channels",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="antenna.radiowaves.left.and.right" color={color} />,
+          title: "Radio",
+          tabBarAccessibilityLabel: "Channels",
+          tabBarIcon: ({ color }) => <IconSymbol size={20} name="antenna.radiowaves.left.and.right" color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="gearshape.fill" color={color} />,
+          title: "More",
+          tabBarAccessibilityLabel: "Settings",
+          tabBarIcon: ({ color }) => <IconSymbol size={20} name="gearshape.fill" color={color} />,
         }}
       />
     </Tabs>

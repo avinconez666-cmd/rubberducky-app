@@ -172,7 +172,8 @@ export function CartoonVehicle({ car, width = 340 }: { car: CarStyle; width?: nu
   const height = Math.round(width * 0.5);
   const on = new Set(car.accessories);
   const front = car.body === "bike" ? 236 : car.body === "truck" ? 300 : 312;
-  const roofY = car.body === "coupe" ? 52 : car.body === "van" ? 40 : car.body === "truck" ? 28 : car.body === "rig" ? 44 : car.body === "suv" ? 42 : car.body === "bike" ? 48 : 46;
+  const roofY = car.body === "coupe" ? 58 : car.body === "van" ? 48 : car.body === "truck" ? 40 : car.body === "rig" ? 50 : car.body === "suv" ? 48 : car.body === "bike" ? 52 : 52;
+  const whip = Math.max(14, roofY - 22);
   return (
     <Svg width={width} height={height} viewBox="0 0 360 180">
       <Ellipse cx="180" cy="158" rx="130" ry="8" fill="#000" opacity={0.28} />
@@ -204,7 +205,7 @@ export function CartoonVehicle({ car, width = 340 }: { car: CarStyle; width?: nu
       )}
       {on.has("beacon") && <Circle cx="168" cy={roofY - 8} r="7" fill="#E4B15A" />}
       {on.has("antenna") && (
-        <Line x1="124" y1={roofY} x2="112" y2={roofY - 36} stroke="#E6EBF2" strokeWidth={2} />
+        <Line x1="124" y1={roofY} x2="112" y2={whip} stroke="#E6EBF2" strokeWidth={2} />
       )}
       {on.has("snorkel") && car.body !== "bike" && (
         <Path d={`M96 ${roofY + 28} V${roofY - 8} Q96 ${roofY - 18} 108 ${roofY - 18}`} fill="none" stroke="#2C3340" strokeWidth={5} strokeLinecap="round" />
