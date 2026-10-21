@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DEFAULT_CAR, normaliseCar, type CarStyle } from "@/constants/garage";
+import { normaliseGpsAccuracy, type GpsAccuracy } from "@/lib/gps";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -9,7 +10,7 @@ export type VehicleType = "car" | "truck" | "motorcycle" | "rv";
 export type ChannelType = "public" | "emergency" | "custom";
 
 // ─── Hazard Report ────────────────────────────────────────────────────────────
-export type HazardType = "accident" | "debris" | "breakdown" | "animal" | "roadworks" | "weather" | "speed_camera" | "police" | "driver";
+export type HazardType = "accident" | "debris" | "breakdown" | "animal" | "roadworks" | "weather" | "speed_camera" | "mobile_camera" | "police" | "driver";
 
 export interface HazardReport {
   id: string;
@@ -103,6 +104,7 @@ export interface UserProfile {
   messagesSent: number;
   photoUri: string | null;
   car: CarStyle;
+  gpsAccuracy: GpsAccuracy;
 }
 
 export interface RoadAlert {
@@ -136,8 +138,8 @@ interface AppContextValue {
   practiceMode: boolean;
   setPracticeMode: (on: boolean) => void;
   // GPS
-  userLocation: { latitude: number; longitude: number; heading: number | null } | null;
-  setGpsSample: (sample: { latitude: number; longitude: number; speedKmh: number; heading: number | null }) => void;
+  userLocation: { latitude: number; longitude: number; heading: number | null; accuracyM: number | null } | null;
+  setGpsSample: (sample: { latitude: number; longitude: number; speedKmh: number; heading: number | null; accuracyM: number | null }) => void;
   roadAlert: RoadAlert | null;
   pushRoadAlert: (title: string, body: string, ms?: number) => void;
   // Safety mode
@@ -232,7 +234,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [nearbyDrivers, setNearbyDrivers] = useState<NearbyDriver[]>([]);
   const [practiceMode, setPracticeModeState] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; heading: number | null } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; heading: number | null; accuracyM: number | null } | null>(null);
   const [roadAlert, setRoadAlert] = useState<RoadAlert | null>(null);
   const [isSafetyMode, setIsSafetyMode] = useState(false);
   const [currentSpeed, setCurrentSpeed] = useState(0);
@@ -271,6 +273,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ...parsed,
             photoUri: parsed.photoUri ?? null,
             car: normaliseCar(parsed.car),
+            gpsAccuracy: normaliseGpsAccuracy(parsed.gpsAccuracy),
           };
           setUserState(withCar);
           setIsOnboarded(true);
@@ -366,6 +369,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       messagesSent: 0,
       photoUri: null,
       car: { ...DEFAULT_CAR, body: vehicle === "truck" ? "truck" : vehicle === "rv" ? "van" : vehicle === "motorcycle" ? "bike" : "sedan" },
+      gpsAccuracy: "standard",
     };
     setUser(newUser);
     setIsOnboarded(true);
@@ -383,8 +387,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userLocation]);
 
-  const setGpsSample = useCallback((sample: { latitude: number; longitude: number; speedKmh: number; heading: number | null }) => {
-    setUserLocation({ latitude: sample.latitude, longitude: sample.longitude, heading: sample.heading });
+  const setGpsSample = useCallback((sample: { latitude: number; longitude: number; speedKmh: number; heading: number | null; accuracyM: number | null }) => {
+    setUserLocation({ latitude: sample.latitude, longitude: sample.longitude, heading: sample.heading, accuracyM: sample.accuracyM });
     const speed = Math.max(0, Math.round(sample.speedKmh));
     setCurrentSpeed(speed);
     const threshold = thresholdRef.current;
@@ -497,7 +501,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       description,
       reportedBy: user?.displayName ?? "Anonymous",
       reportedAt: Date.now(),
-      expiresAt: Date.now() + (type === "driver" ? 30 : type === "police" ? 45 : 60) * 60 * 1000,
+      expiresAt: Date.now() + (type === "mobile_camera" ? 240 : type === "driver" ? 30 : type === "police" ? 45 : 60) * 60 * 1000,
       upvotes: 1,
     };
     setHazards((prev) => {

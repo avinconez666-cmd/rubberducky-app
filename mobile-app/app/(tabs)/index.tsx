@@ -22,7 +22,9 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics";
 import { useAudioPlayer, useAudioRecorder, RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync } from "expo-audio";
 import { useApp, Message } from "@/contexts/AppContext";
+import { router } from "expo-router";
 import { LiveMap } from "@/components/LiveMap";
+import { QuickReport } from "@/components/QuickReport";
 
 const { height: SCREEN_H } = Dimensions.get("window");
 
@@ -127,6 +129,7 @@ export default function MapScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [showChannelSheet, setShowChannelSheet] = useState(false);
+  const [reportMode, setReportMode] = useState<"hazard" | "mobile" | null>(null);
   const recordingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const secondsRef = useRef(0);
   const recordingRef = useRef(false);
@@ -255,7 +258,9 @@ export default function MapScreen() {
               <Text style={styles.statusText}>{isConnected ? "Live room" : practiceMode ? "Practice" : "Relay off"}</Text>
             </View>
             <View style={styles.statusPill}>
-              <Text style={styles.statusText}>{currentSpeed} km/h</Text>
+              <Text style={styles.statusText}>
+                {currentSpeed} km/h{userLocation?.accuracyM != null ? ` · ±${Math.round(userLocation.accuracyM)}m` : ""}
+              </Text>
             </View>
           </View>
         </View>
@@ -286,6 +291,23 @@ export default function MapScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.bottomOverlay}
       >
+        <View style={styles.quickRow}>
+          <TouchableOpacity style={[styles.quickBtn, styles.quickBtnHelp]} onPress={() => router.push("/help")}>
+            <Text style={styles.quickText}>Help</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickBtn}
+            onPress={() => (isSafetyMode ? Alert.alert("Pull over", "Stop the vehicle before you report a hazard.") : setReportMode("hazard"))}
+          >
+            <Text style={styles.quickText}>Road hazard</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickBtn}
+            onPress={() => (isSafetyMode ? Alert.alert("Pull over", "Stop the vehicle before you pin a camera.") : setReportMode("mobile"))}
+          >
+            <Text style={styles.quickText}>Mobile camera</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.messageFeed}>
           <FlatList
             ref={listRef}
@@ -343,6 +365,8 @@ export default function MapScreen() {
         </View>
       </KeyboardAvoidingView>
 
+      <QuickReport mode={reportMode} onClose={() => setReportMode(null)} />
+
       {showChannelSheet && (
         <Pressable style={styles.sheetOverlay} onPress={() => setShowChannelSheet(false)}>
           <Pressable onPress={(e) => e.stopPropagation()}>
@@ -382,6 +406,10 @@ const styles = StyleSheet.create({
   safetyIcon: { fontSize: 16 },
   safetyText: { fontSize: 13, color: "#FDE68A", fontWeight: "700", flex: 1 },
   bottomOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10 },
+  quickRow: { flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingBottom: 6 },
+  quickBtn: { backgroundColor: "rgba(15,23,42,0.92)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: "#334155" },
+  quickBtnHelp: { backgroundColor: "#78350F", borderColor: "#F59E0B" },
+  quickText: { color: "#F8FAFC", fontWeight: "800", fontSize: 12 },
   messageFeed: { maxHeight: SCREEN_H * 0.28, backgroundColor: "rgba(15,23,42,0.82)", borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingTop: 8 },
   messageList: { paddingHorizontal: 12, paddingBottom: 4 },
   emptyMsg: { color: "#475569", fontSize: 13, textAlign: "center", paddingVertical: 16, lineHeight: 20 },

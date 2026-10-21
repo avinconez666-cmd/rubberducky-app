@@ -17,6 +17,7 @@ const HAZARD_TYPES: { type: HazardType; label: string; emoji: string }[] = [
   { type: "roadworks", label: "Roadworks", emoji: "🚧" },
   { type: "weather", label: "Weather", emoji: "🌧️" },
   { type: "speed_camera", label: "Camera", emoji: "📷" },
+  { type: "mobile_camera", label: "Mobile camera", emoji: "🚐" },
   { type: "police", label: "Traffic stop", emoji: "🚔" },
   { type: "driver", label: "Driver", emoji: "🚙" },
 ];
@@ -84,7 +85,7 @@ export default function HazardsScreen() {
           </View>
 
           <Text className="text-muted text-sm">
-            Pins stay on this phone for an hour. A driver report lasts 30 minutes and a traffic-stop pin lasts 45. Pull over before you type. {CAMERA_COUNT} signposted NSW cameras are already on the map. {CAMERA_SOURCE}
+            Pins stay on this phone for an hour. A mobile camera pin lasts 4 hours, a driver report 30 minutes, and a traffic-stop pin 45 minutes. Pull over before you type. {CAMERA_COUNT} signposted NSW cameras are already on the map. {CAMERA_SOURCE}
           </Text>
           {activeHazards.length === 0 ? (
             <View className="flex-1 items-center justify-center gap-2">

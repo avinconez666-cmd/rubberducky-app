@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { GPS_OPTIONS, normaliseGpsAccuracy } from "@/lib/gps";
 import {
   View,
   Text,
@@ -60,7 +61,7 @@ function SettingRow({
 }
 
 export default function SettingsScreen() {
-  const { user, updateUser, isSafetyMode, currentSpeed, messages, practiceMode, setPracticeMode, relayUrl, setRelayUrl, isConnected } = useApp();
+  const { user, updateUser, isSafetyMode, currentSpeed, messages, practiceMode, setPracticeMode, relayUrl, setRelayUrl, isConnected, userLocation } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(user?.displayName ?? "");
   const [relayDraft, setRelayDraft] = useState(relayUrl);
@@ -200,6 +201,33 @@ export default function SettingsScreen() {
               />
             }
           />
+        </View>
+
+        <SectionHeader title="GPS accuracy" />
+        <View style={styles.card}>
+          <Text style={styles.cardSubLabel}>
+            Foreground only. Last fix{userLocation?.accuracyM != null ? ` ±${Math.round(userLocation.accuracyM)} m` : " not in yet"}.
+          </Text>
+          <View style={styles.optionRow}>
+            {GPS_OPTIONS.map((opt) => {
+              const on = normaliseGpsAccuracy(user.gpsAccuracy) === opt.id;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[styles.optionChip, on && styles.optionChipActive]}
+                  onPress={() => {
+                    updateUser({ gpsAccuracy: opt.id });
+                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <Text style={[styles.optionChipText, on && styles.optionChipTextActive]}>{opt.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text style={[styles.cardSubLabel, { marginTop: 8 }]}>
+            {GPS_OPTIONS.find((opt) => opt.id === normaliseGpsAccuracy(user.gpsAccuracy))?.detail}
+          </Text>
         </View>
 
         {/* Proximity radius */}

@@ -169,10 +169,10 @@ wss.on("connection", (ws) => {
         lng: Number(msg.lng),
         from: me.handle,
         at: Date.now(),
-        expiresAt: Date.now() + (msg.hazardType === "driver" ? 30 : msg.hazardType === "police" ? 45 : 60) * 60 * 1000,
+        expiresAt: Date.now() + (msg.hazardType === "mobile_camera" ? 240 : msg.hazardType === "driver" ? 30 : msg.hazardType === "police" ? 45 : 60) * 60 * 1000,
       };
       if (!Number.isFinite(packet.lat) || !Number.isFinite(packet.lng)) return;
-      if (packet.hazardType === "driver" && looksLikePlate(packet.description)) {
+      if ((packet.hazardType === "driver" || packet.hazardType === "mobile_camera") && looksLikePlate(packet.description)) {
         send(ws, { type: "error", error: "Driver reports cannot include a number plate" });
         return;
       }

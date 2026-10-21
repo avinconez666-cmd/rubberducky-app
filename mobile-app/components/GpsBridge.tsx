@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import * as Location from "expo-location";
 import { useApp } from "@/contexts/AppContext";
+import { normaliseGpsAccuracy, watchOptions } from "@/lib/gps";
 
 /** Foreground GPS only. No background tracking. */
 export function GpsBridge() {
-  const { isOnboarded, setGpsSample } = useApp();
+  const { isOnboarded, setGpsSample, user } = useApp();
+  const mode = normaliseGpsAccuracy(user?.gpsAccuracy);
 
   useEffect(() => {
     if (!isOnboarded) return;
@@ -15,20 +17,18 @@ export function GpsBridge() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted" || cancelled) return;
       sub = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 4000,
-          distanceInterval: 8,
-        },
+        watchOptions(mode),
         (loc) => {
           const raw = loc.coords.speed;
           const speedKmh = raw == null || raw < 0 ? 0 : raw * 3.6;
           const heading = loc.coords.heading != null && loc.coords.heading >= 0 ? loc.coords.heading : null;
+          const accuracyM = loc.coords.accuracy != null && loc.coords.accuracy >= 0 ? loc.coords.accuracy : null;
           setGpsSample({
             latitude: loc.coords.latitude,
             longitude: loc.coords.longitude,
             speedKmh,
             heading,
+            accuracyM,
           });
         },
       );
@@ -38,7 +38,7 @@ export function GpsBridge() {
       cancelled = true;
       sub?.remove();
     };
-  }, [isOnboarded, setGpsSample]);
+  }, [isOnboarded, setGpsSample, mode]);
 
   return null;
 }

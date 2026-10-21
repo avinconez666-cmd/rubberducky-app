@@ -181,7 +181,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         if (msg.type === "hazard") {
           const hazardType = String(msg.hazardType || "debris") as HazardType;
           const description = String(msg.description || "");
-          if (hazardType === "driver" && noteHasPlate(description)) return;
+          if ((hazardType === "driver" || hazardType === "mobile_camera") && noteHasPlate(description)) return;
           ingestHazard({
             id: String(msg.id),
             type: hazardType,

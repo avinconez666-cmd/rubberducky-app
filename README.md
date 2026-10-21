@@ -31,6 +31,9 @@ npx eas-cli build -p android --profile production
 - Friend requests by handle
 - Profile photo and a car garage (paint, wheels, accessories)
 - 347 signposted NSW fixed and red-light cameras from Transport for NSW open data, with an ahead warning
-- Community camera, traffic-stop, and driver-behaviour pins. Driver notes cannot include a number plate. Traffic-stop pins expire after 45 minutes, driver pins after 30.
+- Roadside help opens 000, the state motoring club on 13 11 11, maps for a tow or mobile mechanic, and a text with your location. It does not book anything.
+- GPS accuracy: Saver, Standard, or Best, shown as ± metres on the map
+- Road-hazard pins from the map: accident, breakdown, debris, animal, roadworks, weather
+- Mobile speed-camera pins on your GPS fix, kept for 4 hours
 
 No account. No subscription. No background location. No police or speed-camera alerts.
