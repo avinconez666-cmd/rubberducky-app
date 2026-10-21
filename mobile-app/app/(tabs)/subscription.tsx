@@ -18,6 +18,7 @@ import {
   type WheelStyle,
 } from "@/constants/garage";
 import { PACKAGE_TIERS } from "@/constants/vehicle-customization";
+import { playSfx } from "@/lib/sfx";
 
 export default function GarageScreen() {
   const { user, updateUser } = useApp();
@@ -26,6 +27,7 @@ export default function GarageScreen() {
   const { width } = useWindowDimensions();
   const artWidth = Math.max(220, Math.min(340, width - 32));
   const stage = useRef(new Animated.Value(1)).current;
+  const equipPulse = useRef(new Animated.Value(1)).current;
   const signature = user ? `${user.car.body}|${user.car.paint}|${user.car.wheel}|${user.car.accessories.join(",")}` : "";
   useEffect(() => {
     stage.setValue(0.92);
@@ -55,6 +57,13 @@ export default function GarageScreen() {
       return;
     }
     const has = car.accessories.includes(id);
+    if (!has) {
+      playSfx("unlock");
+      Animated.sequence([
+        Animated.spring(equipPulse, { toValue: 1.07, friction: 4, tension: 120, useNativeDriver: true }),
+        Animated.spring(equipPulse, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
+      ]).start();
+    }
     setCar({ accessories: has ? car.accessories.filter((item) => item !== id) : [...car.accessories, id] });
   };
 
@@ -84,7 +93,7 @@ export default function GarageScreen() {
         <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>{user.displayName}</Text>
         <Text style={styles.lead}>The vehicle below is the one on your profile. Packages further down are a preview. Nothing on this screen charges you.</Text>
 
-        <Animated.View style={[styles.hero, { transform: [{ scale: stage }] }]}>
+        <Animated.View style={[styles.hero, { transform: [{ scale: stage }, { scale: equipPulse }] }]}>
           <CartoonVehicle car={car} width={artWidth} />
           <Text style={styles.heroMeta}>
             {BODIES.find((item) => item.id === car.body)?.label} · {car.accessories.length} fitted
