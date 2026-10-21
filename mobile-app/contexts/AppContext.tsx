@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_CAR, EMPTY_STATS, normaliseCar, normaliseStats, type CarStyle, type DriverStats } from "@/constants/garage";
+import { DEFAULT_CAR, EMPTY_STATS, MILESTONES, normaliseCar, normaliseStats, type CarStyle, type DriverStats } from "@/constants/garage";
 import { haversineMeters } from "@/lib/geo";
+import { playSfx } from "@/lib/sfx";
 import { normaliseGpsAccuracy, type GpsAccuracy } from "@/lib/gps";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -400,6 +401,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       (Object.keys(partial) as (keyof DriverStats)[]).forEach((key) => {
         next[key] = stats[key] + (partial[key] ?? 0);
       });
+      const before = MILESTONES.filter((item) => item.read(stats) >= item.goal).length;
+      const after = MILESTONES.filter((item) => item.read(next) >= item.goal).length;
+      if (after > before) playSfx("unlock");
       const updated = { ...prev, stats: next };
       AsyncStorage.setItem("rubberducky_user", JSON.stringify(updated)).catch(() => {});
       return updated;
@@ -536,6 +540,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     bumpStats({ hazards: 1 });
+    playSfx("pin");
   }, [user, bumpStats]);
 
   const ingestHazard = useCallback((hazard: HazardReport) => {

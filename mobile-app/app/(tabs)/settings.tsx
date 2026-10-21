@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { GPS_OPTIONS, normaliseGpsAccuracy } from "@/lib/gps";
+import { setSfxEnabled, sfxEnabled } from "@/lib/sfx";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   View,
   Text,
@@ -65,6 +67,11 @@ export default function SettingsScreen() {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(user?.displayName ?? "");
   const [relayDraft, setRelayDraft] = useState(relayUrl);
+  const [soundOn, setSoundOn] = useState(sfxEnabled());
+
+  useEffect(() => {
+    AsyncStorage.getItem("rubberducky_sfx").then((v) => setSoundOn(v !== "0"));
+  }, []);
 
   useEffect(() => {
     setRelayDraft(relayUrl);
@@ -178,6 +185,25 @@ export default function SettingsScreen() {
                   if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
                 trackColor={{ false: "#2A3140", true: "#22C55E" }}
+                thumbColor="#F4F0E6"
+              />
+            }
+          />
+        </View>
+
+        <SectionHeader title="Sound" />
+        <View style={styles.card}>
+          <SettingRow
+            label="Radio sounds"
+            sublabel="Roger beep, incoming chirp, and a tone when a milestone unlocks."
+            right={
+              <Switch
+                value={soundOn}
+                onValueChange={(v) => {
+                  setSoundOn(v);
+                  setSfxEnabled(v);
+                }}
+                trackColor={{ false: "#2A3140", true: "#E4B15A" }}
                 thumbColor="#F4F0E6"
               />
             }

@@ -22,6 +22,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import { RadioProvider } from "@/contexts/RadioContext";
 import { GpsBridge } from "@/components/GpsBridge";
 import { RoadAlerts } from "@/components/RoadAlerts";
+import { loadSfx } from "@/lib/sfx";
 import { useApp } from "@/contexts/AppContext";
 import { useRootNavigationState } from "expo-router";
 
@@ -94,6 +95,10 @@ export default function RootLayout() {
       },
     };
   }, [initialInsets, initialFrame]);
+
+  useEffect(() => {
+    loadSfx();
+  }, []);
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>

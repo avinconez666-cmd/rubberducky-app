@@ -25,13 +25,22 @@ import { useApp, Message } from "@/contexts/AppContext";
 import { router } from "expo-router";
 import { LiveMap } from "@/components/LiveMap";
 import { QuickReport } from "@/components/QuickReport";
+import { playSfx } from "@/lib/sfx";
 
 const { height: SCREEN_H } = Dimensions.get("window");
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
 function MessageBubble({ msg }: { msg: Message }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const shift = useRef(new Animated.Value(10)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 240, useNativeDriver: true }),
+      Animated.timing(shift, { toValue: 0, duration: 240, useNativeDriver: true }),
+    ]).start();
+  }, [opacity, shift]);
   return (
-    <View style={[styles.msgBubble, msg.isOwn && styles.msgBubbleOwn]}>
+    <Animated.View style={[styles.msgBubble, msg.isOwn && styles.msgBubbleOwn, { opacity, transform: [{ translateY: shift }] }]}>
       {!msg.isOwn && (
         <Text style={styles.msgSender}>{msg.senderName}</Text>
       )}
@@ -43,7 +52,7 @@ function MessageBubble({ msg }: { msg: Message }) {
       <Text style={styles.msgTime}>
         {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -69,8 +78,12 @@ function VoiceClip({ label, uri }: { label: string; uri?: string }) {
 // ─── Channel selector sheet ───────────────────────────────────────────────────
 function ChannelSheet({ onClose }: { onClose: () => void }) {
   const { channels, activeChannel, setActiveChannel } = useApp();
+  const rise = useRef(new Animated.Value(28)).current;
+  useEffect(() => {
+    Animated.spring(rise, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
+  }, [rise]);
   return (
-    <View style={styles.channelSheet}>
+    <Animated.View style={[styles.channelSheet, { transform: [{ translateY: rise }] }]}>
       <View style={styles.channelSheetHandle} />
       <Text style={styles.channelSheetTitle}>Select Channel</Text>
       {channels.filter((c) => c.isJoined).map((ch) => (
@@ -82,6 +95,7 @@ function ChannelSheet({ onClose }: { onClose: () => void }) {
           ]}
           onPress={() => {
             setActiveChannel(ch);
+            playSfx("key");
             if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onClose();
           }}
@@ -100,7 +114,7 @@ function ChannelSheet({ onClose }: { onClose: () => void }) {
       <TouchableOpacity style={styles.channelCloseBtn} onPress={onClose} activeOpacity={0.7}>
         <Text style={styles.channelCloseTxt}>Close</Text>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -134,8 +148,41 @@ export default function MapScreen() {
   const secondsRef = useRef(0);
   const recordingRef = useRef(false);
   const pttAnim = useRef(new Animated.Value(1)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
   const listRef = useRef<FlatList>(null);
   const endRef = useRef<() => void>(() => {});
+  const heard = useRef<string | null>(null);
+  const armedSafety = useRef(false);
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last) return;
+    if (heard.current && heard.current !== last.id && !last.isOwn) playSfx("rx");
+    heard.current = last.id;
+  }, [messages]);
+
+  useEffect(() => {
+    if (!armedSafety.current) {
+      armedSafety.current = true;
+      return;
+    }
+    if (isSafetyMode) playSfx("safety");
+  }, [isSafetyMode]);
+
+  useEffect(() => {
+    if (!isRecording) {
+      pulse.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 650, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.2, duration: 650, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [isRecording, pulse]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -157,6 +204,7 @@ export default function MapScreen() {
     const secs = secondsRef.current;
     const uri = recorder.uri ?? undefined;
     radio.announceTx(false);
+    if (secs > 0) playSfx("txOff");
     if (secs > 0) {
       addVoiceMessage(`Voice clip (${secs}s)`, uri);
       const room = activeChannel?.id === "public" || activeChannel?.id === "convoy";
@@ -194,6 +242,7 @@ export default function MapScreen() {
       return;
     }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    playSfx("txOn");
     recordingRef.current = true;
     radio.announceTx(true);
     secondsRef.current = 0;
@@ -211,6 +260,7 @@ export default function MapScreen() {
     const t = textInput.trim();
     if (!t) return;
     sendTextMessage(t);
+    playSfx("key");
     if (activeChannel?.id === "public" || activeChannel?.id === "convoy") radio.broadcastText(t);
     setTextInput("");
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -267,24 +317,24 @@ export default function MapScreen() {
       </SafeAreaView>
 
       {alertLive && (
-        <View style={styles.safetyBanner}>
+        <SlideBanner top={80} color="#3A2A14">
           <Text style={styles.safetyIcon}>⚠️</Text>
           <Text style={styles.safetyText}>{alertLive.title} — {alertLive.body}</Text>
-        </View>
+        </SlideBanner>
       )}
 
       {radio.onAir && (
-        <View style={[styles.safetyBanner, { top: alertLive ? 132 : 80, backgroundColor: "#7F1D1D" }]}>
+        <SlideBanner top={alertLive ? 132 : 80} color="#6B2420">
           <Text style={styles.safetyIcon}>🎙️</Text>
           <Text style={styles.safetyText}>{radio.onAir} is on the mic</Text>
-        </View>
+        </SlideBanner>
       )}
 
       {isSafetyMode && (
-        <View style={styles.safetyBanner}>
+        <SlideBanner top={80} color="#3A2A14">
           <Text style={styles.safetyIcon}>🛡️</Text>
           <Text style={styles.safetyText}>Safety Mode — {currentSpeed} km/h · Text disabled</Text>
-        </View>
+        </SlideBanner>
       )}
 
       <KeyboardAvoidingView
@@ -346,7 +396,13 @@ export default function MapScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <Animated.View style={{ transform: [{ scale: pttAnim }] }}>
+          <Animated.View style={[styles.pttWrap, { transform: [{ scale: pttAnim }] }]}>
+            {isRecording && (
+              <Animated.View
+                pointerEvents="none"
+                style={[styles.pttRing, { opacity: pulse, transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }] }]}
+              />
+            )}
             <Pressable
               style={({ pressed }) => [
                 styles.pttButton,
@@ -375,6 +431,22 @@ export default function MapScreen() {
         </Pressable>
       )}
     </View>
+  );
+}
+
+function SlideBanner({ top, color, children }: { top: number; color: string; children: React.ReactNode }) {
+  const y = useRef(new Animated.Value(-16)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(y, { toValue: 0, duration: 220, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }, [opacity, y]);
+  return (
+    <Animated.View style={[styles.safetyBanner, { top, backgroundColor: color, opacity, transform: [{ translateY: y }] }]}>
+      {children}
+    </Animated.View>
   );
 }
 
@@ -429,6 +501,8 @@ const styles = StyleSheet.create({
   sendBtn: { marginLeft: 8, width: 32, height: 32, borderRadius: 16, backgroundColor: "#22C55E", alignItems: "center", justifyContent: "center" },
   sendBtnText: { fontSize: 14, color: "#090B10", fontWeight: "800" },
   pttButton: { width: 68, height: 68, borderRadius: 34, backgroundColor: "#16120C", borderWidth: 2, borderColor: "#E4B15A", alignItems: "center", justifyContent: "center", gap: 1 },
+  pttWrap: { width: 68, height: 68, alignItems: "center", justifyContent: "center" },
+  pttRing: { position: "absolute", width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: "#E4B15A" },
   pttButtonActive: { backgroundColor: "#6B2420", borderColor: "#E06A62" },
   pttButtonPressed: { opacity: 0.85 },
   pttIcon: { fontSize: 22 },

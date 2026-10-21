@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Alert, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ScreenContainer } from "@/components/screen-container";
 import { CartoonVehicle } from "@/components/CartoonVehicle";
@@ -22,6 +22,12 @@ export default function GarageScreen() {
   const { user, updateUser } = useApp();
   const radio = useRadio();
   const [busy, setBusy] = useState(false);
+  const stage = useRef(new Animated.Value(1)).current;
+  const signature = user ? `${user.car.body}|${user.car.paint}|${user.car.wheel}|${user.car.accessories.join(",")}` : "";
+  useEffect(() => {
+    stage.setValue(0.92);
+    Animated.spring(stage, { toValue: 1, friction: 6, useNativeDriver: true }).start();
+  }, [signature, stage]);
   if (!user) return null;
   const car = user.car;
   const stats = normaliseStats(user.stats);
@@ -75,12 +81,12 @@ export default function GarageScreen() {
         <Text style={styles.title}>{user.displayName}</Text>
         <Text style={styles.lead}>Paint, wheels, and kit. Locked pieces open when you use the radio, not when you pay.</Text>
 
-        <View style={styles.hero}>
+        <Animated.View style={[styles.hero, { transform: [{ scale: stage }] }]}>
           <CartoonVehicle car={car} width={340} />
           <Text style={styles.heroMeta}>
             {BODIES.find((item) => item.id === car.body)?.label} · {car.accessories.length} fitted
           </Text>
-        </View>
+        </Animated.View>
 
         <View style={styles.profile}>
           {user.photoUri ? (
