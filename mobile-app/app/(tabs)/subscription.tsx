@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { Alert, Animated, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { CartoonVehicle } from "@/components/CartoonVehicle";
 import { useApp } from "@/contexts/AppContext";
@@ -20,6 +21,51 @@ import {
 import { PACKAGE_TIERS } from "@/constants/vehicle-customization";
 import { playSfx } from "@/lib/sfx";
 
+type AccessoryRarity = "rare" | "legendary";
+const ACCESSORY_RARITY: Record<string, AccessoryRarity> = {
+  lightbar: "rare",
+  canopy: "rare",
+  roofpod: "rare",
+  rack: "rare",
+  flags: "rare",
+  beacon: "legendary",
+  winch: "legendary",
+};
+
+const PARTICLES = [
+  { x: -92, y: -68, size: 7 }, { x: -64, y: -102, size: 5 }, { x: -24, y: -82, size: 9 },
+  { x: 22, y: -108, size: 6 }, { x: 64, y: -76, size: 8 }, { x: 96, y: -34, size: 5 },
+  { x: -104, y: 8, size: 5 }, { x: 104, y: 12, size: 7 }, { x: -76, y: 54, size: 8 },
+  { x: -28, y: 82, size: 5 }, { x: 38, y: 76, size: 7 }, { x: 82, y: 48, size: 5 },
+];
+
+function EquipParticleBurst({ progress, color }: { progress: Animated.Value; color: string }) {
+  return (
+    <View pointerEvents="none" style={styles.particleLayer}>
+      {PARTICLES.map((particle, index) => {
+        const direction = index % 2 === 0 ? 1 : 0.82;
+        return (
+          <Animated.View
+            key={`${particle.x}-${particle.y}`}
+            style={[
+              styles.particle,
+              { width: particle.size, height: particle.size, borderRadius: particle.size / 2, backgroundColor: color },
+              {
+                opacity: progress.interpolate({ inputRange: [0, 0.12, 0.72, 1], outputRange: [0, 1, 1, 0] }),
+                transform: [
+                  { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [0, particle.x * direction] }) },
+                  { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, particle.y * direction] }) },
+                  { scale: progress.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.3, 1.25, 0.65] }) },
+                ],
+              },
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
 export default function GarageScreen() {
   const { user, updateUser } = useApp();
   const radio = useRadio();
@@ -28,6 +74,8 @@ export default function GarageScreen() {
   const artWidth = Math.max(220, Math.min(340, width - 32));
   const stage = useRef(new Animated.Value(1)).current;
   const equipPulse = useRef(new Animated.Value(1)).current;
+  const particleProgress = useRef(new Animated.Value(0)).current;
+  const [particleColor, setParticleColor] = useState("#32E6D3");
   const signature = user ? `${user.car.body}|${user.car.paint}|${user.car.wheel}|${user.car.accessories.join(",")}` : "";
   useEffect(() => {
     stage.setValue(0.92);
@@ -59,6 +107,23 @@ export default function GarageScreen() {
     const has = car.accessories.includes(id);
     if (!has) {
       playSfx("unlock");
+      const rarity = ACCESSORY_RARITY[id];
+      if (rarity) {
+        const color = rarity === "legendary" ? "#FFD447" : "#FF4FD8";
+        setParticleColor(color);
+        particleProgress.setValue(0);
+        Animated.timing(particleProgress, { toValue: 1, duration: rarity === "legendary" ? 820 : 620, useNativeDriver: true }).start();
+        if (Platform.OS !== "web") {
+          if (rarity === "legendary") {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } else {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+        }
+      } else if (Platform.OS !== "web") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       Animated.sequence([
         Animated.spring(equipPulse, { toValue: 1.07, friction: 4, tension: 120, useNativeDriver: true }),
         Animated.spring(equipPulse, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
@@ -95,6 +160,7 @@ export default function GarageScreen() {
 
         <Animated.View style={[styles.hero, { transform: [{ scale: stage }, { scale: equipPulse }] }]}>
           <CartoonVehicle car={car} width={artWidth} />
+          <EquipParticleBurst progress={particleProgress} color={particleColor} />
           <Text style={styles.heroMeta}>
             {BODIES.find((item) => item.id === car.body)?.label} · {car.accessories.length} fitted
           </Text>
@@ -231,7 +297,9 @@ const styles = StyleSheet.create({
   packageTagline: { color: "#9AA3B2", fontSize: 12, lineHeight: 17, marginTop: 4 },
   packagePrice: { flexShrink: 0, color: "#E4B15A", fontWeight: "800", fontSize: 15 },
   packageUnlocks: { color: "#9AA3B2", fontSize: 12, fontWeight: "600", marginTop: 10 },
-  hero: { marginTop: 16, backgroundColor: "#12151C", borderRadius: 28, borderWidth: 1, borderColor: "#2A3140", alignItems: "center", paddingTop: 8, paddingBottom: 4, overflow: "hidden" },
+  hero: { marginTop: 16, backgroundColor: "#12151C", borderRadius: 28, borderWidth: 1, borderColor: "#2A3140", alignItems: "center", paddingTop: 8, paddingBottom: 4, overflow: "hidden", position: "relative" },
+  particleLayer: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", zIndex: 4 },
+  particle: { position: "absolute", left: "50%", top: "44%", marginLeft: -4, marginTop: -4, shadowColor: "#FFFFFF", shadowOpacity: 0.85, shadowRadius: 6, shadowOffset: { width: 0, height: 0 }, elevation: 5 },
   heroMeta: { color: "#9AA3B2", fontWeight: "600", marginBottom: 8 },
   profile: { marginTop: 14, flexDirection: "row", gap: 14, alignItems: "center", backgroundColor: "#12151C", borderRadius: 20, padding: 14, borderWidth: 1, borderColor: "#2A3140" },
   photo: { width: 64, height: 64, borderRadius: 32 },
