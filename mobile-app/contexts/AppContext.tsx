@@ -82,6 +82,7 @@ export interface NearbyDriver {
   channelId: string;
   lastSeen: number; // timestamp
   heading?: number | null;
+  car?: CarStyle;
 }
 
 export interface Message {
@@ -380,7 +381,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sessionStartTime: Date.now(),
       messagesSent: 0,
       photoUri: null,
-      car: { ...DEFAULT_CAR, body: vehicle === "truck" ? "truck" : vehicle === "rv" ? "van" : vehicle === "motorcycle" ? "bike" : "sedan" },
+      car: { ...DEFAULT_CAR, body: vehicle === "truck" ? "hilux" : vehicle === "rv" ? "landcruiser" : "holden" },
       gpsAccuracy: "standard",
       stats: { ...EMPTY_STATS },
       homeLat: null,

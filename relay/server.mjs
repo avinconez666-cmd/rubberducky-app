@@ -33,6 +33,18 @@ function roster() {
   }));
 }
 
+function cleanCar(car) {
+  if (!car || typeof car !== "object") return null;
+  const paint = typeof car.paint === "string" && /^#[0-9A-Fa-f]{6}$/.test(car.paint) ? car.paint : "#C4453C";
+  const accessories = Array.isArray(car.accessories) ? car.accessories.slice(0, 12).map((id) => String(id).slice(0, 20)) : [];
+  return {
+    body: String(car.body || "holden").slice(0, 20),
+    paint,
+    wheel: String(car.wheel || "alloy").slice(0, 16),
+    accessories,
+  };
+}
+
 function positions() {
   const now = Date.now();
   return [...clients.values()]
@@ -43,6 +55,7 @@ function positions() {
       lat: p.lat,
       lng: p.lng,
       heading: p.heading,
+      car: p.car ?? null,
     }));
 }
 
@@ -108,7 +121,7 @@ wss.on("connection", (ws) => {
       clients.set(ws, {
         handle,
         vehicle: String(msg.vehicle || "car"),
-        car: msg.car ?? null,
+        car: cleanCar(msg.car),
         lat: null,
         lng: null,
         heading: null,
@@ -124,8 +137,9 @@ wss.on("connection", (ws) => {
 
     if (msg.type === "profile") {
       me.vehicle = String(msg.vehicle || me.vehicle);
-      me.car = msg.car ?? me.car;
+      me.car = cleanCar(msg.car) ?? me.car;
       broadcast({ type: "presence", roster: roster() });
+      broadcastPositions();
       return;
     }
 
@@ -137,6 +151,7 @@ wss.on("connection", (ws) => {
       me.lat = visible ? Math.round(lat * 1e5) / 1e5 : null;
       me.lng = visible ? Math.round(lng * 1e5) / 1e5 : null;
       me.heading = visible && Number.isFinite(Number(msg.heading)) ? Number(msg.heading) : null;
+      if (msg.car) me.car = cleanCar(msg.car);
       me.at = Date.now();
       broadcastPositions();
       return;

@@ -291,8 +291,7 @@ export default function MapScreen() {
         hazards={hazards}
         drivers={mapDrivers}
         cameras={cameras}
-        paint={user?.car?.paint}
-        body={user?.car?.body}
+        car={user?.car}
         heading={userLocation?.heading ?? null}
         speed={currentSpeed}
       />

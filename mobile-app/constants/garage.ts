@@ -1,5 +1,5 @@
-export type CarBody = "sedan" | "ute" | "suv" | "wagon" | "coupe" | "van" | "truck" | "rig" | "bike";
-export type WheelStyle = "steel" | "alloy" | "black" | "gold" | "bronze" | "whitewall";
+export type CarBody = "holden" | "falcon" | "hilux" | "landcruiser" | "holdenute" | "patrol";
+export type WheelStyle = "steel" | "alloy" | "mags" | "black" | "gold" | "bronze";
 
 export interface CarStyle {
   body: CarBody;
@@ -68,22 +68,31 @@ export function milestoneLeft(id: string, stats: DriverStats) {
 }
 
 export const DEFAULT_CAR: CarStyle = {
-  body: "sedan",
-  paint: "#E4B15A",
+  body: "holden",
+  paint: "#C4453C",
   wheel: "alloy",
-  accessories: ["antenna"],
+  accessories: [],
+};
+
+const LEGACY_BODY: Record<string, CarBody> = {
+  sedan: "holden",
+  ute: "hilux",
+  suv: "landcruiser",
+  wagon: "falcon",
+  coupe: "falcon",
+  van: "patrol",
+  truck: "hilux",
+  rig: "landcruiser",
+  bike: "holden",
 };
 
 export const BODIES: { id: CarBody; label: string; milestone: string | null }[] = [
-  { id: "sedan", label: "Sedan", milestone: null },
-  { id: "ute", label: "Ute", milestone: null },
-  { id: "suv", label: "SUV", milestone: null },
-  { id: "wagon", label: "Wagon", milestone: "chatter" },
-  { id: "coupe", label: "Coupe", milestone: "regular" },
-  { id: "van", label: "Van", milestone: "spotter" },
-  { id: "truck", label: "Truck", milestone: "lookout" },
-  { id: "rig", label: "4x4", milestone: "ten" },
-  { id: "bike", label: "Bike", milestone: "air" },
+  { id: "holden", label: "Holden sedan", milestone: null },
+  { id: "falcon", label: "Falcon sedan", milestone: null },
+  { id: "hilux", label: "Hilux", milestone: "spotter" },
+  { id: "holdenute", label: "Holden ute", milestone: "chatter" },
+  { id: "landcruiser", label: "LandCruiser", milestone: "ten" },
+  { id: "patrol", label: "Patrol", milestone: "lookout" },
 ];
 
 export const PAINTS: { id: string; hex: string; label: string; milestone: string | null }[] = [
@@ -105,35 +114,31 @@ export const PAINTS: { id: string; hex: string; label: string; milestone: string
 export const WHEELS: { id: WheelStyle; label: string; milestone: string | null }[] = [
   { id: "steel", label: "Steel", milestone: null },
   { id: "alloy", label: "Alloy", milestone: null },
+  { id: "mags", label: "Mags", milestone: "air" },
   { id: "black", label: "Black", milestone: "ten" },
   { id: "bronze", label: "Bronze", milestone: "lookout" },
-  { id: "whitewall", label: "Whitewall", milestone: "chatter" },
   { id: "gold", label: "Gold", milestone: "fifty" },
 ];
 
 export const ACCESSORIES: { id: string; label: string; blurb: string; milestone: string | null }[] = [
-  { id: "antenna", label: "CB antenna", blurb: "The whip on the roof", milestone: null },
-  { id: "sunstrip", label: "Sun strip", blurb: "Dark band on the glass", milestone: null },
-  { id: "spots", label: "Spot lights", blurb: "Twin lamps on the nose", milestone: "air" },
-  { id: "stripe", label: "Side stripe", blurb: "One clean line along the body", milestone: "chatter" },
-  { id: "bullbar", label: "Bull bar", blurb: "Country-road front bar", milestone: "spotter" },
+  { id: "tint", label: "Tint", blurb: "Dark glass", milestone: null },
+  { id: "sunstrip", label: "Sun strip", blurb: "Band across the top of the screen", milestone: null },
+  { id: "mags", label: "Mags", blurb: "Deep-dish wheels", milestone: "air" },
+  { id: "bodykit", label: "Body kit", blurb: "Skirts, lip and flares", milestone: "regular" },
+  { id: "spoiler", label: "Boot spoiler", blurb: "Lip on the rear", milestone: "chatter" },
+  { id: "turbo", label: "Exposed turbo", blurb: "Scoop, cooler and dump pipe", milestone: "night" },
+  { id: "bullbar", label: "Bull bar", blurb: "Steel bar on the nose", milestone: "spotter" },
   { id: "lightbar", label: "Light bar", blurb: "Lamp across the roof", milestone: "regular" },
-  { id: "snorkel", label: "Snorkel", blurb: "High intake up the pillar", milestone: "ten" },
+  { id: "snorkel", label: "Snorkel", blurb: "Raised intake", milestone: "ten" },
   { id: "canopy", label: "Canopy", blurb: "Hard lid on the tray", milestone: "lookout" },
-  { id: "roofpod", label: "Roof pod", blurb: "Low cargo box", milestone: "mate" },
-  { id: "spoiler", label: "Spoiler", blurb: "Lip on the rear", milestone: "regular" },
-  { id: "exhaust", label: "Side exhaust", blurb: "Tip ahead of the rear wheel", milestone: "fifty" },
-  { id: "mudflaps", label: "Mud flaps", blurb: "Flaps behind both wheels", milestone: "ten" },
-  { id: "rack", label: "Roof rack", blurb: "Two bars over the cabin", milestone: "lookout" },
-  { id: "winch", label: "Winch", blurb: "Drum in the bull bar", milestone: "fifty" },
-  { id: "beacon", label: "Beacon", blurb: "Amber lamp on the roof", milestone: "night" },
-  { id: "flags", label: "Whip flags", blurb: "Two short flags at the back", milestone: "mate" },
+  { id: "antenna", label: "CB antenna", blurb: "Whip on the roof", milestone: null },
 ];
 
 export function normaliseCar(input: Partial<CarStyle> | undefined): CarStyle {
   const knownAcc = new Set(ACCESSORIES.map((item) => item.id));
   const acc = Array.isArray(input?.accessories) ? input.accessories.filter((id) => knownAcc.has(id)) : DEFAULT_CAR.accessories;
-  const body = BODIES.some((item) => item.id === input?.body) ? (input!.body as CarBody) : DEFAULT_CAR.body;
+  const rawBody = typeof input?.body === "string" ? input.body : "";
+  const body = (BODIES.some((item) => item.id === rawBody) ? rawBody : LEGACY_BODY[rawBody] ?? DEFAULT_CAR.body) as CarBody;
   const wheel = WHEELS.some((item) => item.id === input?.wheel) ? (input!.wheel as WheelStyle) : DEFAULT_CAR.wheel;
   const paint = typeof input?.paint === "string" && /^#[0-9A-Fa-f]{6}$/.test(input.paint) ? input.paint : DEFAULT_CAR.paint;
   return { body, paint, wheel, accessories: acc };

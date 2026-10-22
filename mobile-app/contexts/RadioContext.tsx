@@ -3,6 +3,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { useApp, type HazardType, type Message, type NearbyDriver, type VehicleType } from "@/contexts/AppContext";
 import { noteHasPlate } from "@/lib/plates";
 import { insideHomeBubble } from "@/lib/geo";
+import { normaliseCar, type CarStyle } from "@/constants/garage";
 
 interface RadioValue {
   status: "off" | "connecting" | "live" | "error";
@@ -112,7 +113,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
             const rows = Array.isArray(msg.positions) ? msg.positions : [];
             const drivers: NearbyDriver[] = [];
             rows.forEach((row) => {
-              const item = row as { handle?: string; vehicle?: string; lat?: number; lng?: number; heading?: number };
+              const item = row as { handle?: string; vehicle?: string; lat?: number; lng?: number; heading?: number; car?: CarStyle };
               const handle = String(item.handle || "");
               const lat = Number(item.lat);
               const lng = Number(item.lng);
@@ -128,6 +129,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
                 heading: Number.isFinite(Number(item.heading)) ? Number(item.heading) : null,
                 channelId: "live",
                 lastSeen: Date.now(),
+                car: normaliseCar(item.car ?? {}),
               });
             });
             setLiveDrivers(drivers);
@@ -266,6 +268,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         lat: loc.latitude,
         lng: loc.longitude,
         heading: loc.heading,
+        car: me.car,
       });
     };
     pushLoc();

@@ -23,13 +23,11 @@ import { playSfx } from "@/lib/sfx";
 
 type AccessoryRarity = "rare" | "legendary";
 const ACCESSORY_RARITY: Record<string, AccessoryRarity> = {
-  lightbar: "rare",
-  canopy: "rare",
-  roofpod: "rare",
-  rack: "rare",
-  flags: "rare",
-  beacon: "legendary",
-  winch: "legendary",
+  bodykit: "rare",
+  mags: "rare",
+  turbo: "legendary",
+  snorkel: "rare",
+  canopy: "legendary",
 };
 
 const PARTICLES = [
