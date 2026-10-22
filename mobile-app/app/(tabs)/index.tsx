@@ -292,6 +292,9 @@ export default function MapScreen() {
         drivers={mapDrivers}
         cameras={cameras}
         paint={user?.car?.paint}
+        body={user?.car?.body}
+        heading={userLocation?.heading ?? null}
+        speed={currentSpeed}
       />
 
       {/* Top status bar */}
